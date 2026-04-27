@@ -75,31 +75,41 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
     box_w = int(300 * scale)
     box_h = int(55 * scale)
     padding = int(5 * scale)
-    thickness = max(2, int(3 * scale))
 
-    # shading
+    thickness = max(2, int(2 * scale))
+
+    # ---- shading ----
     overlay = frame.copy()
-    cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 220, 120), -1)
-    frame = cv2.addWeighted(overlay, 0.15, frame, 0.85, 0)
+    cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 180, 100), -1)
+    frame = cv2.addWeighted(overlay, 0.12, frame, 0.88, 0)
 
-    # border
-    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 220, 120), thickness)
+    # ---- border ----
+    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 180, 100), thickness)
 
-    # PIL text
+    # ---- PIL text ----
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     pil = Image.fromarray(rgb)
     draw = ImageDraw.Draw(pil)
 
     label_en = f"{english} ({int(conf * 100)}%)"
 
-    # label background box
+    # label background
     draw.rectangle([x1, y1 - box_h, x1 + box_w, y1], fill=(200, 220, 255))
 
     # English text
-    draw.text((x1 + padding, y1 - box_h + padding), label_en, font=font_en_dynamic, fill=(0, 0, 0))
+    draw.text((x1 + padding, y1 - box_h + padding),
+              label_en,
+              font=font_en_dynamic,
+              fill=(0, 0, 0))
 
     # Sinhala text
-    draw_sinhala(draw, x1 + padding, y1 - box_h + padding + font_size_en + 2, sinhala_name, font_si_dynamic)
+    draw_sinhala(
+        draw,
+        x1 + padding,
+        y1 - box_h + padding + font_size_en + 2,
+        sinhala_name,
+        font_si_dynamic
+    )
 
     frame = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
     return frame
