@@ -22,7 +22,6 @@ export default function Upload() {
   const [loading, setLoading] = useState(false);
 
   const [isDragging, setIsDragging] = useState(false);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = () => {
@@ -39,6 +38,7 @@ export default function Upload() {
     setLoading(true);
 
     try {
+      // ================= VIDEO =================
       if (file.type.startsWith("video")) {
         setMode("video");
 
@@ -46,36 +46,38 @@ export default function Upload() {
 
         if (data.error) {
           setError(data.error);
-        } else {
-          const byteCharacters = atob(data.video);
-          const byteNumbers = new Array(byteCharacters.length);
+          setLoading(false);   // 🔥 FIX
+          return;
+        }
 
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
+        const byteCharacters = atob(data.video);
+        const byteNumbers = new Array(byteCharacters.length);
 
-          const blob = new Blob([new Uint8Array(byteNumbers)], { type: "video/mp4" });
-          const videoUrl = URL.createObjectURL(blob);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
 
-          setVideoPreview(videoUrl);
+        const blob = new Blob([new Uint8Array(byteNumbers)], { type: "video/mp4" });
+        const videoUrl = URL.createObjectURL(blob);
 
-          if (data.englishName) {
-            setResult({
-              englishName: data.englishName,
-              sinhalaName: data.sinhalaName || "",
-              confidence: Math.round(data.confidence * 100),
-              category: data.category || "",
-              habitat_en: data.habitat_en || "",
-              diet_en: data.diet_en || "",
-            });
-          }
+        setVideoPreview(videoUrl);
+
+        if (data.englishName) {
+          setResult({
+            englishName: data.englishName,
+            sinhalaName: data.sinhalaName || "",
+            confidence: Math.round(data.confidence * 100),
+            category: data.category || "",
+            habitat_en: data.habitat_en || "",
+            diet_en: data.diet_en || "",
+          });
         }
 
         setLoading(false);
         return;
       }
 
-      // IMAGE
+      // ================= IMAGE =================
       setMode("image");
       setPreview(URL.createObjectURL(file));
 
@@ -83,27 +85,30 @@ export default function Upload() {
 
       if (data.error) {
         setError(data.error);
-      } else {
-        let conf = Math.round(data.confidence * 100);
-        if (conf >= 100) conf = 99;
-
-        setTimeout(() => {
-          if (data.image) {
-            setPreview(`data:image/jpeg;base64,${data.image}`);
-          }
-
-          setResult({
-            englishName: data.englishName,
-            sinhalaName: data.sinhalaName,
-            confidence: conf,
-            category: data.category,
-            habitat_en: data.habitat_en,
-            diet_en: data.diet_en,
-          });
-
-          setLoading(false);
-        }, 1200);
+        setLoading(false);   // 🔥 FIX
+        return;
       }
+
+      let conf = Math.round(data.confidence * 100);
+      if (conf >= 100) conf = 99;
+
+      setTimeout(() => {
+        if (data.image) {
+          setPreview(`data:image/jpeg;base64,${data.image}`);
+        }
+
+        setResult({
+          englishName: data.englishName,
+          sinhalaName: data.sinhalaName,
+          confidence: conf,
+          category: data.category,
+          habitat_en: data.habitat_en,
+          diet_en: data.diet_en,
+        });
+
+        setLoading(false);
+      }, 1200);
+
     } catch (err) {
       console.error(err);
       setError("Connection failed");
@@ -127,10 +132,9 @@ export default function Upload() {
           )}
         </AnimatePresence>
 
-        {/* ✅ UPDATED TITLE + DESCRIPTION */}
+        {/* TITLE */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold">Analyze Media</h1>
-
           <p className="text-gray-500 max-w-xl mx-auto">
             Upload an image or video to detect and classify bird species.
             <span className="text-green-700 font-medium">
@@ -200,6 +204,7 @@ export default function Upload() {
         {(preview || videoPreview) && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
 
+            {/* LEFT */}
             <div className="flex justify-center">
               {videoPreview ? (
                 <video src={videoPreview} controls className="rounded-3xl max-h-[500px]" />
@@ -208,8 +213,14 @@ export default function Upload() {
               )}
             </div>
 
+            {/* RIGHT */}
             <div className="bg-white p-8 rounded-3xl shadow-xl space-y-6 h-fit">
-              {error && <p className="text-red-500">{error}</p>}
+
+              {error && (
+                <div className="bg-red-100 text-red-600 p-3 rounded-xl">
+                  ⚠️ {error}
+                </div>
+              )}
 
               {result && (
                 <>
