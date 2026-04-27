@@ -127,7 +127,17 @@ export default function Upload() {
           )}
         </AnimatePresence>
 
-        <h1 className="text-4xl text-center font-bold">Analyze Media</h1>
+        {/* ✅ UPDATED TITLE + DESCRIPTION */}
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold">Analyze Media</h1>
+
+          <p className="text-gray-500 max-w-xl mx-auto">
+            Upload an image or video to detect and classify bird species.
+            <span className="text-green-700 font-medium">
+              {" "}Real-time Sinhala + English results.
+            </span>
+          </p>
+        </div>
 
         {/* MODE SWITCH */}
         <div className="flex justify-center gap-4">
