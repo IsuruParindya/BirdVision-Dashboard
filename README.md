@@ -15,7 +15,7 @@ BirdVision is a full-stack bird recognition system that detects and classifies b
 - **Frontend:** React, TypeScript, Tailwind CSS
 - **Models:** YOLOv8 (Detection) + ResNet50 (Classification)
 
-## ⚙️ Setup
+## ⚙️ Setup for the Backend
 
 ### Backend
 ```bash
