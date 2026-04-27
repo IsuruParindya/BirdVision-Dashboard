@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { ImageUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { predictImage, predictVideo } from "@/api";
 
 type Result = {
   englishName: string;
@@ -38,18 +39,10 @@ export default function Upload() {
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-
       if (file.type.startsWith("video")) {
         setMode("video");
 
-        const res = await fetch("http://127.0.0.1:5000/predict-video", {
-          method: "POST",
-          body: formData,
-        });
-
-        const data = await res.json();
+        const data = await predictVideo(file);
 
         if (data.error) {
           setError(data.error);
@@ -61,8 +54,7 @@ export default function Upload() {
             byteNumbers[i] = byteCharacters.charCodeAt(i);
           }
 
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: "video/mp4" });
+          const blob = new Blob([new Uint8Array(byteNumbers)], { type: "video/mp4" });
           const videoUrl = URL.createObjectURL(blob);
 
           setVideoPreview(videoUrl);
@@ -87,12 +79,7 @@ export default function Upload() {
       setMode("image");
       setPreview(URL.createObjectURL(file));
 
-      const res = await fetch("http://127.0.0.1:5000/predict", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
+      const data = await predictImage(file);
 
       if (data.error) {
         setError(data.error);
@@ -172,34 +159,18 @@ export default function Upload() {
                 : "bg-white border-gray-300"
               }`}
             onClick={() => fileInputRef.current?.click()}
-
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
-
             onDrop={(e) => {
               e.preventDefault();
               setIsDragging(false);
-
               const file = e.dataTransfer.files?.[0];
               if (file) handleFile(file);
             }}
           >
-            <ImageUp
-              className={`mx-auto mb-4 transition-all ${
-                isDragging ? "text-green-700 scale-110" : ""
-              }`}
-              size={50}
-            />
-
+            <ImageUp className={`mx-auto mb-4 ${isDragging ? "text-green-700 scale-110" : ""}`} size={50} />
             <p className="font-medium">
-              {isDragging
-                ? "Drop it here 👇"
-                : `Click or Drag ${mode === "image" ? "Image" : "Video"}`
-              }
+              {isDragging ? "Drop it here 👇" : `Click or Drag ${mode === "image" ? "Image" : "Video"}`}
             </p>
 
             <input
@@ -219,7 +190,6 @@ export default function Upload() {
         {(preview || videoPreview) && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
 
-            {/* LEFT */}
             <div className="flex justify-center">
               {videoPreview ? (
                 <video src={videoPreview} controls className="rounded-3xl max-h-[500px]" />
@@ -228,7 +198,6 @@ export default function Upload() {
               )}
             </div>
 
-            {/* RIGHT */}
             <div className="bg-white p-8 rounded-3xl shadow-xl space-y-6 h-fit">
               {error && <p className="text-red-500">{error}</p>}
 
