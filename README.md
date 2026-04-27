@@ -11,7 +11,7 @@ BirdVision is a full-stack bird recognition system that detects and classifies b
 - Interactive dashboard UI
 
 ## 🛠 Tech Stack
-- **Backend:** Flask, PyTorch, OpenCV
+- **Backend:** Flask API, PyTorch, OpenCV
 - **Frontend:** React, TypeScript, Tailwind CSS
 - **Models:** YOLOv8 (Detection) + ResNet50 (Classification)
 
@@ -40,7 +40,6 @@ Upload an image or video → system detects bird → shows:
 - Habitat & diet info
 
 ## 📌 Notes
-- Models are not included in the repo due to size limits
 - Ensure correct dependencies (numpy + opencv compatibility)
 
 ---
