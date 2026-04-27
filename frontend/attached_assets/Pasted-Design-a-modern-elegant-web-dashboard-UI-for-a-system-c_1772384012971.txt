@@ -1,0 +1,200 @@
+Design a modern, elegant web dashboard UI for a system called:
+
+“BirdVision – Bird Species Recognition with Sinhala Support”
+
+This is an AI-powered bird detection system that supports:
+
+Live camera bird detection
+
+Functional image upload (user can select or drag & drop an image, system detects birds)
+
+Functional video upload (user can select or drag & drop a video, system detects birds frame by frame)
+
+Displaying bird names in English and Sinhala
+
+Sinhala pronunciation audio
+
+The design should feel modern, immersive, and research-grade — not corporate and not overly technical.
+
+🎨 New Color Palette (Premium Nature-Tech)
+
+Use:
+
+Deep Emerald Green (#0F3D2E)
+
+Soft Teal (#1F7A6C)
+
+Warm Sand (#F4F1E6)
+
+Accent Electric Blue (#3FA9F5) for bounding boxes
+
+White cards with soft shadows
+
+Make it feel refined and high-end.
+Bounding boxes must glow in Electric Blue.
+
+🧭 Sidebar Design (Key Visual Feature)
+
+Left fixed vertical sidebar:
+
+Bird silhouette logo + BirdVision
+
+Dashboard
+
+Live Detection
+
+Upload
+
+Analytics
+
+Settings
+
+Design requirements:
+
+Deep emerald gradient background
+
+Subtle black transparent bird image overlay (low opacity 8–12%)
+
+Smooth hover animations
+
+Electric blue active indicator line
+
+Sidebar with large right-side rounded corners only (top-right + bottom-right)
+
+Left side straight
+
+Smooth and premium appearance
+
+Collapsible sidebar optional
+
+📊 Dashboard Page (Overview)
+
+Header:
+“Bird Recognition Overview”
+
+Include 4 stat cards:
+
+Total Detections
+
+Species Identified
+
+Average Confidence
+
+Most Detected Bird
+
+Below: Recent Detection table:
+
+Thumbnail
+
+English name
+
+Sinhala name
+
+Confidence
+
+Timestamp
+
+Style:
+
+16px rounded corners
+
+Glassmorphism / soft frosted cards
+
+Clean spacing
+
+Subtle hover animation
+
+🎥 Live Detection Page
+
+Large centered camera preview:
+
+Blue glowing animated bounding box overlay
+
+Floating info card (bottom-right):
+
+Bird thumbnail
+
+English name (bold)
+
+Sinhala name (larger)
+
+Confidence %
+
+🔊 Play Sinhala Audio button
+
+Controls below:
+
+Start Camera
+
+Stop Camera
+
+Capture Snapshot
+
+Confidence threshold slider
+
+Structured layout like a monitoring dashboard.
+
+📤 Upload Page (Functional Image + Video Upload)
+
+Centered upload section with two tabs or toggle buttons:
+
+Upload Image → fully functional: drag & drop or select from device, detects birds, shows bounding boxes
+
+Upload Video → fully functional: drag & drop or select from device, detects birds frame by frame, shows bounding boxes
+
+Preview section:
+
+Shows uploaded media (image or video player)
+
+Blue glowing bounding boxes appear dynamically over detected birds
+
+Result card beside preview:
+
+English name
+
+Sinhala name
+
+Confidence score
+
+🔊 Play Sinhala Audio button
+
+Layout must be clean, balanced, and functional.
+
+📈 Analytics Page (Minimal & Clean)
+
+Include only two charts:
+
+Model Accuracy Line Chart
+
+Species Detection Bar Chart
+
+Charts should be minimal, modern, and use electric blue accents.
+No excessive data.
+
+⚙️ Settings Page (Minimal)
+
+Simple card layout. Include only:
+
+Language Options: English / Sinhala / Both
+
+Remove all theme options entirely.
+
+✨ Design Style Requirements
+
+Modern dashboard layout
+
+16px rounded corners
+
+Smooth transitions
+
+Subtle hover animations
+
+Clean grid alignment
+
+Professional spacing
+
+Electric blue glowing bounding boxes
+
+Sidebar bird silhouette watermark
+
+Premium, presentation-ready aesthetic

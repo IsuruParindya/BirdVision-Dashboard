@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'DM Sans', sans-serif;
+    --font-display: 'Outfit', sans-serif;
+
+    /* Premium Nature-Tech Palette */
+    /* Warm Sand */
+    --background: 43 33% 96%;
+    /* Deep Emerald Green */
+    --foreground: 160 60% 15%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 160 60% 15%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 160 60% 15%;
+    
+    /* Soft Teal */
+    --primary: 171 59% 30%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Deep Emerald Green (Secondary) */
+    --secondary: 160 60% 15%;
+    --secondary-foreground: 43 33% 96%;
+    
+    --muted: 160 20% 92%;
+    --muted-foreground: 160 20% 45%;
+    
+    /* Accent Electric Blue */
+    --accent: 205 90% 60%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 160 20% 85%;
+    --input: 160 20% 85%;
+    --ring: 205 90% 60%;
+    
+    /* 16px rounded corners */
+    --radius: 1rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    @apply tracking-tight;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  }
+  
+  .sidebar-gradient {
+    background: linear-gradient(165deg, hsl(160 60% 15%), hsl(171 59% 25%));
+  }
+
+  .glowing-box {
+    border: 2px solid hsl(var(--accent));
+    box-shadow: 0 0 15px hsla(var(--accent) / 0.6), inset 0 0 15px hsla(var(--accent) / 0.3);
+    animation: pulse-glow 2s infinite alternate;
+  }
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 10px hsla(var(--accent) / 0.4), inset 0 0 10px hsla(var(--accent) / 0.2);
+  }
+  100% {
+    box-shadow: 0 0 25px hsla(var(--accent) / 0.8), inset 0 0 20px hsla(var(--accent) / 0.5);
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+.animate-scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: hsl(var(--accent));
+  box-shadow: 0 0 10px hsl(var(--accent)), 0 0 20px hsl(var(--accent));
+  animation: scan-line 3s linear infinite;
+  z-index: 10;
+}
