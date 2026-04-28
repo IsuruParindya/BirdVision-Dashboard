@@ -7,7 +7,7 @@ import {
   Maximize,
 } from "lucide-react";
 import { useLanguage } from "./LanguageContext";
-import { getLiveFeedUrl } from "@/api";
+import { getLiveFeedUrl, API_BASE } from "@/api";
 import en from "@/contents/en";
 import sin from "@/contents/sin";
 
@@ -19,6 +19,14 @@ export default function LiveDetection() {
   const [isScanning, setIsScanning] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState(0);
 
+  /*
+    This key forces React to fully destroy
+    the <img> stream and rebuild it.
+    This is what actually helps kill
+    the browser MJPEG connection.
+  */
+  const [streamKey, setStreamKey] = useState(0);
+
   const e = en.liveDetection;
   const s = sin.liveDetection;
 
@@ -29,10 +37,60 @@ export default function LiveDetection() {
       ? sVal
       : eVal;
 
-  const streamUrl = `${getLiveFeedUrl()}?camera=${selectedCamera}`;
+  const streamUrl = `${getLiveFeedUrl()}?camera=${selectedCamera}&t=${streamKey}`;
 
-  const toggleScan = () => {
-    setIsScanning(!isScanning);
+  /*
+    REAL START / STOP
+    -----------------
+    Start:
+    - show stream
+
+    Stop:
+    - call backend /stop-live-feed
+    - remove <img>
+    - force stream destroy
+    - webcam light turns off
+  */
+  const toggleScan = async () => {
+    if (isScanning) {
+      try {
+        await fetch(`${API_BASE}/stop-live-feed`, {
+          method: "POST",
+        });
+      } catch (error) {
+        console.error("Failed to stop camera:", error);
+      }
+
+      setIsScanning(false);
+
+      /*
+        Force browser to kill stream connection
+      */
+      setStreamKey((prev) => prev + 1);
+    } else {
+      setIsScanning(true);
+    }
+  };
+
+  /*
+    If user switches camera while scanning,
+    restart stream automatically.
+  */
+  const switchCamera = async (cameraIndex: number) => {
+    if (selectedCamera === cameraIndex) return;
+
+    if (isScanning) {
+      try {
+        await fetch(`${API_BASE}/stop-live-feed`, {
+          method: "POST",
+        });
+      } catch (error) {
+        console.error("Failed stopping old camera:", error);
+      }
+    }
+
+    setSelectedCamera(cameraIndex);
+    setStreamKey((prev) => prev + 1);
   };
 
   return (
@@ -54,7 +112,7 @@ export default function LiveDetection() {
           {/* Camera Switch Buttons */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setSelectedCamera(0)}
+              onClick={() => switchCamera(0)}
               className={`px-5 py-3 rounded-xl font-semibold transition-all ${
                 selectedCamera === 0
                   ? "bg-primary/90 text-white shadow-lg"
@@ -65,7 +123,7 @@ export default function LiveDetection() {
             </button>
 
             <button
-              onClick={() => setSelectedCamera(1)}
+              onClick={() => switchCamera(1)}
               className={`px-5 py-3 rounded-xl font-semibold transition-all ${
                 selectedCamera === 1
                   ? "bg-primary/90 text-white shadow-lg"
@@ -100,6 +158,7 @@ export default function LiveDetection() {
           {/* Live Stream */}
           {isScanning ? (
             <img
+              key={streamKey}
               src={streamUrl}
               alt="Live Feed"
               className="w-full h-full object-cover transition-opacity duration-700"

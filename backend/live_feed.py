@@ -18,10 +18,11 @@ live_bp = Blueprint("live_feed", __name__)
 # =========================
 
 base = os.path.join(os.path.dirname(__file__), "models")
+
 font_path = os.path.join(
     os.path.dirname(__file__),
     "fonts",
-    "NotoSansSinhala-Regular.ttf"
+    "NotoSansSinhhala-Regular.ttf"
 )
 
 pth = os.path.join(base, "bird_resnet50.pth")
@@ -61,7 +62,10 @@ transform = transforms.Compose([
 
 
 def classify(img):
-    img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+    img = Image.fromarray(
+        cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    )
+
     x = transform(img).unsqueeze(0).to(device)
 
     with torch.no_grad():
@@ -69,19 +73,6 @@ def classify(img):
         conf, pred = torch.max(probs, 1)
 
     return classes[int(pred)], float(conf)
-
-
-# =========================
-# TRACKER
-# =========================
-
-def create_tracker():
-    if hasattr(cv2, "TrackerCSRT_create"):
-        return cv2.TrackerCSRT_create()
-    elif hasattr(cv2, "legacy"):
-        return cv2.legacy.TrackerCSRT_create()
-    else:
-        raise Exception("Install opencv-contrib-python")
 
 
 # =========================
@@ -97,7 +88,12 @@ def load_font(size):
 
 def draw_sinhala(draw, x, y, text, font):
     for ch in text:
-        draw.text((x, y), ch, font=font, fill=(255, 255, 255))
+        draw.text(
+            (x, y),
+            ch,
+            font=font,
+            fill=(255, 255, 255)
+        )
         x += font.getbbox(ch)[2]
 
 
@@ -122,7 +118,10 @@ def get_camera(camera_index=0):
 
     release_camera()
 
-    cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
+    cap = cv2.VideoCapture(
+        camera_index,
+        cv2.CAP_DSHOW
+    )
 
     if cap.isOpened():
         ret, _ = cap.read()
@@ -134,7 +133,9 @@ def get_camera(camera_index=0):
 
         cap.release()
 
-    raise Exception(f"Camera index {camera_index} not found")
+    raise Exception(
+        f"Camera index {camera_index} not found"
+    )
 
 
 # =========================
@@ -148,15 +149,12 @@ def generate_frames(camera_index=0):
         print(str(e))
         return
 
-    tracker = None
-    tracking = False
-
+    # smoother settings
+    DETECT_INTERVAL = 0.2
     last_detect_time = 0
-    DETECT_INTERVAL = 0.5
 
-    last_label = ""
-    last_si = ""
-    last_conf = 0
+    last_boxes = []
+    last_labels = []
 
     while True:
         success, frame = cap.read()
@@ -168,103 +166,143 @@ def generate_frames(camera_index=0):
 
         h, w = frame.shape[:2]
         scale = 640 / w
-        frame = cv2.resize(frame, (640, int(h * scale)))
+        frame = cv2.resize(
+            frame,
+            (640, int(h * scale))
+        )
 
         current_time = time.time()
 
         # =========================
-        # DETECTION
+        # FAST YOLO DETECTION
         # =========================
 
         if current_time - last_detect_time > DETECT_INTERVAL:
+            last_boxes = []
+            last_labels = []
+
             results = detector.predict(
                 frame,
-                conf=0.3,
+                conf=0.25,
                 imgsz=320,
                 verbose=False
             )[0]
 
             if results.boxes is not None and len(results.boxes) > 0:
-                b = results.boxes[0]
-                x1, y1, x2, y2 = map(int, b.xyxy[0])
+                for b in results.boxes[:3]:
+                    x1, y1, x2, y2 = map(
+                        int,
+                        b.xyxy[0]
+                    )
 
-                crop = frame[y1:y2, x1:x2]
+                    crop = frame[y1:y2, x1:x2]
 
-                if crop.size != 0:
+                    if crop.size == 0:
+                        continue
+
                     raw, conf = classify(crop)
 
-                    if conf > 0.6:
-                        last_label = raw.replace("_", " ").title()
-                        last_si = sinhala.get(raw, "Unknown")
-                        last_conf = conf
+                    if conf < 0.45:
+                        continue
 
-                        tracker = create_tracker()
-                        tracker.init(
-                            frame,
-                            (x1, y1, x2 - x1, y2 - y1)
+                    english = raw.replace(
+                        "_",
+                        " "
+                    ).title()
+
+                    sinhala_name = sinhala.get(
+                        raw,
+                        "Unknown"
+                    )
+
+                    last_boxes.append(
+                        (x1, y1, x2, y2)
+                    )
+
+                    last_labels.append(
+                        (
+                            english,
+                            sinhala_name,
+                            conf
                         )
-                        tracking = True
+                    )
 
             last_detect_time = current_time
 
         # =========================
-        # TRACKING
+        # DRAW SMOOTHLY
         # =========================
 
-        if tracking and tracker is not None:
-            success, box = tracker.update(frame)
+        for i, box in enumerate(last_boxes):
+            x1, y1, x2, y2 = box
+            english, sinhala_name, conf = last_labels[i]
 
-            if success:
-                x, y, bw, bh = map(int, box)
-                x1, y1, x2, y2 = x, y, x + bw, y + bh
+            cv2.rectangle(
+                frame,
+                (x1, y1),
+                (x2, y2),
+                (0, 180, 100),
+                2
+            )
 
-                label = f"{last_label} ({last_conf * 100:.0f}%)"
+            rgb = cv2.cvtColor(
+                frame,
+                cv2.COLOR_BGR2RGB
+            )
 
-                cv2.rectangle(
-                    frame,
-                    (x1, y1),
-                    (x2, y2),
-                    (0, 180, 100),
-                    2
-                )
+            pil = Image.fromarray(rgb)
+            draw = ImageDraw.Draw(pil)
 
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                pil = Image.fromarray(rgb)
-                draw = ImageDraw.Draw(pil)
+            font_en = load_font(18)
+            font_si = load_font(16)
 
-                font_en = load_font(18)
-                font_si = load_font(16)
+            label = f"{english} ({int(conf * 100)}%)"
 
-                draw.text(
-                    (x1 + 6, y1 - 30),
-                    label,
-                    font=font_en,
-                    fill=(255, 255, 255)
-                )
+            draw.rectangle(
+                [
+                    x1,
+                    y1 - 55,
+                    x1 + 280,
+                    y1
+                ],
+                fill=(30, 30, 30)
+            )
 
-                draw_sinhala(
-                    draw,
-                    x1 + 6,
-                    y1 - 10,
-                    last_si,
-                    font_si
-                )
+            draw.text(
+                (x1 + 6, y1 - 50),
+                label,
+                font=font_en,
+                fill=(255, 255, 255)
+            )
 
-                frame = cv2.cvtColor(
-                    np.array(pil),
-                    cv2.COLOR_RGB2BGR
-                )
+            draw_sinhala(
+                draw,
+                x1 + 6,
+                y1 - 25,
+                sinhala_name,
+                font_si
+            )
 
-            else:
-                tracking = False
+            frame = cv2.cvtColor(
+                np.array(pil),
+                cv2.COLOR_RGB2BGR
+            )
 
-        _, buffer = cv2.imencode(".jpg", frame)
+        # =========================
+        # STREAM RESPONSE
+        # =========================
+
+        _, buffer = cv2.imencode(
+            ".jpg",
+            frame
+        )
+
         frame_bytes = buffer.tobytes()
 
         yield (
             b"--frame\r\n"
-            b"Content-Type: image/jpeg\r\n\r\n" +
-            frame_bytes +
+            b"Content-Type: image/jpeg\r\n\r\n"
+            + frame_bytes +
             b"\r\n"
         )
 
@@ -289,7 +327,10 @@ def live_feed():
     )
 
 
-@live_bp.route("/stop-live-feed", methods=["POST"])
+@live_bp.route(
+    "/stop-live-feed",
+    methods=["POST"]
+)
 def stop_live_feed():
     release_camera()
 
