@@ -7,9 +7,10 @@ import { queryClient } from "./lib/queryClient";
 import Dashboard from "./pages/dashboard";
 import LiveDetection from "./pages/live-detection";
 import Upload from "./pages/upload";
-import BirdInsights from "./pages/birdInsights";
+import BirdInsights from "./pages/system-performance";
 import Settings from "./pages/settings";
 import NotFound from "@/pages/not-found";
+import SystemPerformance from "@/pages/system-performance";
 // Context
 import { LanguageProvider } from "@/pages/LanguageContext";
 
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/live" component={LiveDetection} />
       <Route path="/upload" component={Upload} />
       <Route path="/birdinsights" component={BirdInsights} />
+      <Route path="/system-performance" component={SystemPerformance} />
       <Route path="/settings" component={Settings} />
       <Route path="*" component={NotFound} />
     </Switch>

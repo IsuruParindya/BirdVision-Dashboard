@@ -6,6 +6,12 @@ import {
   Drumstick,
 } from "lucide-react";
 
+import { useLanguage } from "@/pages/LanguageContext";
+import en from "@/contents/en";
+import sin from "@/contents/sin";
+
+type LangMode = "english" | "sinhala" | "both";
+
 type Result = {
   englishName: string;
   sinhalaName: string;
@@ -53,6 +59,18 @@ export default function BirdDetailsCard({
   videoPreview,
   resetState,
 }: Props) {
+  const { language } = useLanguage() as { language: LangMode };
+
+  const e = en.birdDetailsCard;
+  const s = sin.birdDetailsCard;
+
+  const getBoth = (eVal: string, sVal: string) =>
+    language === "both"
+      ? `${eVal} / ${sVal}`
+      : language === "sinhala"
+      ? sVal
+      : eVal;
+
   return (
     <div className="glass-card rounded-[28px] p-5 lg:p-7 h-fit">
 
@@ -71,32 +89,49 @@ export default function BirdDetailsCard({
 
             <div>
               <h3 className="text-xl font-bold text-foreground">
-                Bird Details
+                {getBoth(e.title, s.title)}
               </h3>
+
               <p className="text-sm text-muted-foreground">
-                Detected Bird Information
+                {getBoth(e.subtitle, s.subtitle)}
               </p>
             </div>
           </div>
 
           <div className="mt-6 space-y-4">
             <InfoCard
-              title="English Name"
+              title={getBoth(
+                e.englishName,
+                s.englishName
+              )}
               value={result.englishName}
             />
 
             <InfoCard
-              title="Sinhala Name"
+              title={getBoth(
+                e.sinhalaName,
+                s.sinhalaName
+              )}
               value={result.sinhalaName}
             />
 
             <InfoCard
-              title="Diet & Habitat"
-              value={`Diet: ${result.diet_en}\nHabitat: ${result.habitat_en}`}
+              title={getBoth(
+                e.dietHabitat,
+                s.dietHabitat
+              )}
+              value={`${getBoth(e.diet, s.diet)}: ${result.diet_en}
+${getBoth(e.habitat, s.habitat)}: ${result.habitat_en}`}
               icon={
                 <div className="flex flex-col gap-2">
-                  <Drumstick size={18} className="text-primary" />
-                  <MapPin size={18} className="text-primary" />
+                  <Drumstick
+                    size={18}
+                    className="text-primary"
+                  />
+                  <MapPin
+                    size={18}
+                    className="text-primary"
+                  />
                 </div>
               }
             />
@@ -111,7 +146,10 @@ export default function BirdDetailsCard({
             download="processed-video.mp4"
             className="px-5 py-3 bg-primary/90 text-white rounded-xl"
           >
-            Download Video
+            {getBoth(
+              e.downloadVideo,
+              s.downloadVideo
+            )}
           </a>
         )}
 
@@ -119,7 +157,10 @@ export default function BirdDetailsCard({
           onClick={resetState}
           className="px-5 py-3 bg-primary/90 text-white rounded-xl"
         >
-          Upload Another
+          {getBoth(
+            e.uploadAnother,
+            s.uploadAnother
+          )}
         </button>
       </div>
     </div>

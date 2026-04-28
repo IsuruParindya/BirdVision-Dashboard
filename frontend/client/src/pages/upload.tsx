@@ -5,6 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { predictImage, predictVideo } from "@/api";
 import BirdDetailsCard from "@/pages/BirdDetailsCard";
 
+import { useLanguage } from "@/pages/LanguageContext";
+import en from "@/contents/en";
+import sin from "@/contents/sin";
+
+type LangMode = "english" | "sinhala" | "both";
+
 type Result = {
   englishName: string;
   sinhalaName: string;
@@ -23,6 +29,18 @@ export default function Upload() {
 
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { language } = useLanguage() as { language: LangMode };
+
+  const e = en.upload;
+  const s = sin.upload;
+
+  const getBoth = (eVal: string, sVal: string) =>
+    language === "both"
+      ? `${eVal} / ${sVal}`
+      : language === "sinhala"
+      ? sVal
+      : eVal;
 
   const resetState = () => {
     setPreview(null);
@@ -127,7 +145,7 @@ export default function Upload() {
             <motion.div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="w-12 h-12 border-4 border-gray-300 border-t-green-700 rounded-full animate-spin"></div>
-                <p>Analyzing...</p>
+                <p>{getBoth(e.analyzing, s.analyzing)}</p>
               </div>
             </motion.div>
           )}
@@ -135,11 +153,15 @@ export default function Upload() {
 
         {/* TITLE */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold">Analyze Media</h1>
+          <h1 className="text-4xl font-bold">
+            {getBoth(e.title, s.title)}
+          </h1>
+
           <p className="text-gray-500 max-w-xl mx-auto">
-            Upload an image or video to detect and classify bird species.
+            {getBoth(e.subtitle, s.subtitle)}
             <span className="text-green-700 font-medium">
-              {" "}Real-time Sinhala + English results.
+              {" "}
+              {getBoth(e.liveResults, s.liveResults)}
             </span>
           </p>
         </div>
@@ -157,7 +179,7 @@ export default function Upload() {
                 : "bg-gray-200"
             }`}
           >
-            Image
+            {getBoth(e.tabImage, s.tabImage)}
           </button>
 
           <button
@@ -171,7 +193,7 @@ export default function Upload() {
                 : "bg-gray-200"
             }`}
           >
-            Video
+            {getBoth(e.tabVideo, s.tabVideo)}
           </button>
         </div>
 
@@ -206,8 +228,16 @@ export default function Upload() {
 
             <p className="font-medium">
               {isDragging
-                ? "Drop it here 👇"
-                : `Click or Drag ${mode === "image" ? "Image" : "Video"}`}
+                ? getBoth(e.dropHere, s.dropHere)
+                : mode === "image"
+                ? getBoth(
+                    e.clickOrDragImage,
+                    s.clickOrDragImage
+                  )
+                : getBoth(
+                    e.clickOrDragVideo,
+                    s.clickOrDragVideo
+                  )}
             </p>
 
             <input
