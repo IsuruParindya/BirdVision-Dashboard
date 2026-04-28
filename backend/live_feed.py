@@ -96,7 +96,6 @@ def draw_sinhala(draw, x, y, text, font):
         )
         x += font.getbbox(ch)[2]
 
-
 # =========================
 # SAME DRAW LABEL AS app.py
 # =========================
@@ -193,13 +192,11 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
 
     return frame
 
-
 # =========================
 # CAMERA CONTROL
 # =========================
 
 active_camera = None
-
 
 def release_camera():
     global active_camera
@@ -233,7 +230,6 @@ def get_camera(camera_index=0):
     raise Exception(
         f"Camera index {camera_index} not found"
     )
-
 
 # =========================
 # STREAM
@@ -364,7 +360,6 @@ def generate_frames(camera_index=0):
         )
 
     release_camera()
-
 
 # =========================
 # ROUTES
