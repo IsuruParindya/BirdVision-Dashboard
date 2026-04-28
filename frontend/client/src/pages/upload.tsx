@@ -151,8 +151,8 @@ export default function Upload() {
           )}
         </AnimatePresence>
 
-        {/* TITLE */}
-        <div className="text-center space-y-2">
+        {/* TITLE + MODE SWITCH grouped together */}
+        <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold">
             {getBoth(e.title, s.title)}
           </h1>
@@ -164,37 +164,37 @@ export default function Upload() {
               {getBoth(e.liveResults, s.liveResults)}
             </span>
           </p>
-        </div>
 
-        {/* MODE SWITCH */}
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={() => {
-              setMode("image");
-              resetState();
-            }}
-            className={`px-5 py-2 rounded-xl ${
-              mode === "image"
-                ? "bg-primary/90 text-white"
-                : "bg-gray-200"
-            }`}
-          >
-            {getBoth(e.tabImage, s.tabImage)}
-          </button>
+          {/* MODE SWITCH — centered directly under subtitle */}
+          <div className="flex justify-center gap-4 pt-1">
+            <button
+              onClick={() => {
+                setMode("image");
+                resetState();
+              }}
+              className={`px-5 py-2 rounded-xl ${
+                mode === "image"
+                  ? "bg-primary/90 text-white"
+                  : "bg-gray-200"
+              }`}
+            >
+              {getBoth(e.tabImage, s.tabImage)}
+            </button>
 
-          <button
-            onClick={() => {
-              setMode("video");
-              resetState();
-            }}
-            className={`px-5 py-2 rounded-xl ${
-              mode === "video"
-                ? "bg-primary/90 text-white"
-                : "bg-gray-200"
-            }`}
-          >
-            {getBoth(e.tabVideo, s.tabVideo)}
-          </button>
+            <button
+              onClick={() => {
+                setMode("video");
+                resetState();
+              }}
+              className={`px-5 py-2 rounded-xl ${
+                mode === "video"
+                  ? "bg-primary/90 text-white"
+                  : "bg-gray-200"
+              }`}
+            >
+              {getBoth(e.tabVideo, s.tabVideo)}
+            </button>
+          </div>
         </div>
 
         {/* UPLOAD */}
