@@ -3,11 +3,15 @@
 BirdVision is a full-stack bird recognition system that detects and classifies bird species from images and videos using deep learning.
 
 ## 🚀 Features
-- Image and Video bird detection
+- Image bird detection
+- Video bird detection
+- Live camera feed bird detection
 - YOLOv8 object detection
 - ResNet50 species classification
 - Sinhala + English bilingual output
+- Real-time live detection
 - Real-time video processing
+- Camera switching (Laptop Cam / External Cam)
 - Interactive dashboard UI
 
 ## 🛠 Tech Stack
