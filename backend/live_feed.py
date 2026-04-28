@@ -22,7 +22,7 @@ base = os.path.join(os.path.dirname(__file__), "models")
 font_path = os.path.join(
     os.path.dirname(__file__),
     "fonts",
-    "NotoSansSinhhala-Regular.ttf"
+    "NotoSansSinhala-Regular.ttf"
 )
 
 pth = os.path.join(base, "bird_resnet50.pth")
@@ -41,7 +41,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Running on:", device)
 
 # =========================
-# CLASSIFIER
+# MODEL
 # =========================
 
 clf = models.resnet50(weights=None)
@@ -92,9 +92,106 @@ def draw_sinhala(draw, x, y, text, font):
             (x, y),
             ch,
             font=font,
-            fill=(255, 255, 255)
+            fill=(0, 0, 0)
         )
         x += font.getbbox(ch)[2]
+
+
+# =========================
+# SAME DRAW LABEL AS app.py
+# =========================
+
+def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
+    h, w, _ = frame.shape
+    scale = max(w, h) / 800
+
+    font_size_en = max(16, int(20 * scale))
+    font_size_si = max(14, int(18 * scale))
+
+    font_en_dynamic = load_font(font_size_en)
+    font_si_dynamic = load_font(font_size_si)
+
+    box_w = int(300 * scale)
+    box_h = int(55 * scale)
+    padding = int(5 * scale)
+
+    thickness = max(2, int(2 * scale))
+
+    # transparent shade inside bounding box
+    overlay = frame.copy()
+
+    cv2.rectangle(
+        overlay,
+        (x1, y1),
+        (x2, y2),
+        (0, 180, 100),
+        -1
+    )
+
+    frame = cv2.addWeighted(
+        overlay,
+        0.12,
+        frame,
+        0.88,
+        0
+    )
+
+    # border
+    cv2.rectangle(
+        frame,
+        (x1, y1),
+        (x2, y2),
+        (0, 180, 100),
+        thickness
+    )
+
+    rgb = cv2.cvtColor(
+        frame,
+        cv2.COLOR_BGR2RGB
+    )
+
+    pil = Image.fromarray(rgb)
+    draw = ImageDraw.Draw(pil)
+
+    label_en = f"{english} ({int(conf * 100)}%)"
+
+    # label background (same as app.py)
+    draw.rectangle(
+        [
+            x1,
+            y1 - box_h,
+            x1 + box_w,
+            y1
+        ],
+        fill=(200, 220, 255)
+    )
+
+    # English text
+    draw.text(
+        (
+            x1 + padding,
+            y1 - box_h + padding
+        ),
+        label_en,
+        font=font_en_dynamic,
+        fill=(0, 0, 0)
+    )
+
+    # Sinhala text
+    draw_sinhala(
+        draw,
+        x1 + padding,
+        y1 - box_h + padding + font_size_en + 2,
+        sinhala_name,
+        font_si_dynamic
+    )
+
+    frame = cv2.cvtColor(
+        np.array(pil),
+        cv2.COLOR_RGB2BGR
+    )
+
+    return frame
 
 
 # =========================
@@ -139,7 +236,7 @@ def get_camera(camera_index=0):
 
 
 # =========================
-# STREAM GENERATOR
+# STREAM
 # =========================
 
 def generate_frames(camera_index=0):
@@ -149,7 +246,6 @@ def generate_frames(camera_index=0):
         print(str(e))
         return
 
-    # smoother settings
     DETECT_INTERVAL = 0.2
     last_detect_time = 0
 
@@ -166,6 +262,7 @@ def generate_frames(camera_index=0):
 
         h, w = frame.shape[:2]
         scale = 640 / w
+
         frame = cv2.resize(
             frame,
             (640, int(h * scale))
@@ -174,7 +271,7 @@ def generate_frames(camera_index=0):
         current_time = time.time()
 
         # =========================
-        # FAST YOLO DETECTION
+        # DETECTION
         # =========================
 
         if current_time - last_detect_time > DETECT_INTERVAL:
@@ -212,7 +309,7 @@ def generate_frames(camera_index=0):
 
                     sinhala_name = sinhala.get(
                         raw,
-                        "Unknown"
+                        ""
                     )
 
                     last_boxes.append(
@@ -230,62 +327,22 @@ def generate_frames(camera_index=0):
             last_detect_time = current_time
 
         # =========================
-        # DRAW SMOOTHLY
+        # DRAW SAME STYLE AS app.py
         # =========================
 
         for i, box in enumerate(last_boxes):
             x1, y1, x2, y2 = box
             english, sinhala_name, conf = last_labels[i]
 
-            cv2.rectangle(
+            frame = draw_label(
                 frame,
-                (x1, y1),
-                (x2, y2),
-                (0, 180, 100),
-                2
-            )
-
-            rgb = cv2.cvtColor(
-                frame,
-                cv2.COLOR_BGR2RGB
-            )
-
-            pil = Image.fromarray(rgb)
-            draw = ImageDraw.Draw(pil)
-
-            font_en = load_font(18)
-            font_si = load_font(16)
-
-            label = f"{english} ({int(conf * 100)}%)"
-
-            draw.rectangle(
-                [
-                    x1,
-                    y1 - 55,
-                    x1 + 280,
-                    y1
-                ],
-                fill=(30, 30, 30)
-            )
-
-            draw.text(
-                (x1 + 6, y1 - 50),
-                label,
-                font=font_en,
-                fill=(255, 255, 255)
-            )
-
-            draw_sinhala(
-                draw,
-                x1 + 6,
-                y1 - 25,
+                x1,
+                y1,
+                x2,
+                y2,
+                english,
                 sinhala_name,
-                font_si
-            )
-
-            frame = cv2.cvtColor(
-                np.array(pil),
-                cv2.COLOR_RGB2BGR
+                conf
             )
 
         # =========================
