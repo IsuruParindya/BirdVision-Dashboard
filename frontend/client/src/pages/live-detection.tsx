@@ -15,18 +15,9 @@ type LangMode = "english" | "sinhala" | "both";
 
 export default function LiveDetection() {
   const { language } = useLanguage() as { language: LangMode };
-
   const [isScanning, setIsScanning] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState(0);
-
-  /*
-    This key forces React to fully destroy
-    the <img> stream and rebuild it.
-    This is what actually helps kill
-    the browser MJPEG connection.
-  */
   const [streamKey, setStreamKey] = useState(0);
-
   const e = en.liveDetection;
   const s = sin.liveDetection;
 
@@ -38,19 +29,6 @@ export default function LiveDetection() {
       : eVal;
 
   const streamUrl = `${getLiveFeedUrl()}?camera=${selectedCamera}&t=${streamKey}`;
-
-  /*
-    REAL START / STOP
-    -----------------
-    Start:
-    - show stream
-
-    Stop:
-    - call backend /stop-live-feed
-    - remove <img>
-    - force stream destroy
-    - webcam light turns off
-  */
   const toggleScan = async () => {
     if (isScanning) {
       try {
@@ -62,20 +40,12 @@ export default function LiveDetection() {
       }
 
       setIsScanning(false);
-
-      /*
-        Force browser to kill stream connection
-      */
       setStreamKey((prev) => prev + 1);
     } else {
       setIsScanning(true);
     }
   };
 
-  /*
-    If user switches camera while scanning,
-    restart stream automatically.
-  */
   const switchCamera = async (cameraIndex: number) => {
     if (selectedCamera === cameraIndex) return;
 

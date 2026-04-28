@@ -3,12 +3,12 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { ImageUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { predictImage, predictVideo } from "@/api";
+import BirdDetailsCard from "@/pages/BirdDetailsCard";
 
 type Result = {
   englishName: string;
   sinhalaName: string;
   confidence: number;
-  category: string;
   habitat_en: string;
   diet_en: string;
 };
@@ -46,7 +46,7 @@ export default function Upload() {
 
         if (data.error) {
           setError(data.error);
-          setLoading(false);   // 🔥 FIX
+          setLoading(false);
           return;
         }
 
@@ -57,9 +57,12 @@ export default function Upload() {
           byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
 
-        const blob = new Blob([new Uint8Array(byteNumbers)], { type: "video/mp4" });
-        const videoUrl = URL.createObjectURL(blob);
+        const blob = new Blob(
+          [new Uint8Array(byteNumbers)],
+          { type: "video/mp4" }
+        );
 
+        const videoUrl = URL.createObjectURL(blob);
         setVideoPreview(videoUrl);
 
         if (data.englishName) {
@@ -67,7 +70,6 @@ export default function Upload() {
             englishName: data.englishName,
             sinhalaName: data.sinhalaName || "",
             confidence: Math.round(data.confidence * 100),
-            category: data.category || "",
             habitat_en: data.habitat_en || "",
             diet_en: data.diet_en || "",
           });
@@ -85,7 +87,7 @@ export default function Upload() {
 
       if (data.error) {
         setError(data.error);
-        setLoading(false);   // 🔥 FIX
+        setLoading(false);
         return;
       }
 
@@ -101,7 +103,6 @@ export default function Upload() {
           englishName: data.englishName,
           sinhalaName: data.sinhalaName,
           confidence: conf,
-          category: data.category,
           habitat_en: data.habitat_en,
           diet_en: data.diet_en,
         });
@@ -146,18 +147,28 @@ export default function Upload() {
         {/* MODE SWITCH */}
         <div className="flex justify-center gap-4">
           <button
-            onClick={() => { setMode("image"); resetState(); }}
+            onClick={() => {
+              setMode("image");
+              resetState();
+            }}
             className={`px-5 py-2 rounded-xl ${
-              mode === "image" ? "bg-primary/90 text-white" : "bg-gray-200"
+              mode === "image"
+                ? "bg-primary/90 text-white"
+                : "bg-gray-200"
             }`}
           >
             Image
           </button>
 
           <button
-            onClick={() => { setMode("video"); resetState(); }}
+            onClick={() => {
+              setMode("video");
+              resetState();
+            }}
             className={`px-5 py-2 rounded-xl ${
-              mode === "video" ? "bg-primary/90 text-white" : "bg-gray-200"
+              mode === "video"
+                ? "bg-primary/90 text-white"
+                : "bg-gray-200"
             }`}
           >
             Video
@@ -168,12 +179,16 @@ export default function Upload() {
         {!preview && !videoPreview && (
           <div
             className={`border-2 border-dashed p-16 text-center rounded-3xl cursor-pointer transition-all duration-200
-              ${isDragging 
-                ? "bg-green-50 border-green-600 scale-[1.03] shadow-lg shadow-green-200"
-                : "bg-white border-gray-300"
+              ${
+                isDragging
+                  ? "bg-green-50 border-green-600 scale-[1.03] shadow-lg shadow-green-200"
+                  : "bg-white border-gray-300"
               }`}
             onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDragging(true);
+            }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => {
               e.preventDefault();
@@ -182,9 +197,17 @@ export default function Upload() {
               if (file) handleFile(file);
             }}
           >
-            <ImageUp className={`mx-auto mb-4 ${isDragging ? "text-green-700 scale-110" : ""}`} size={50} />
+            <ImageUp
+              className={`mx-auto mb-4 ${
+                isDragging ? "text-green-700 scale-110" : ""
+              }`}
+              size={50}
+            />
+
             <p className="font-medium">
-              {isDragging ? "Drop it here 👇" : `Click or Drag ${mode === "image" ? "Image" : "Video"}`}
+              {isDragging
+                ? "Drop it here 👇"
+                : `Click or Drag ${mode === "image" ? "Image" : "Video"}`}
             </p>
 
             <input
@@ -207,42 +230,26 @@ export default function Upload() {
             {/* LEFT */}
             <div className="flex justify-center">
               {videoPreview ? (
-                <video src={videoPreview} controls className="rounded-3xl max-h-[500px]" />
+                <video
+                  src={videoPreview}
+                  controls
+                  className="rounded-3xl max-h-[500px]"
+                />
               ) : (
-                <img src={preview!} className="rounded-3xl max-h-[500px]" />
+                <img
+                  src={preview!}
+                  className="rounded-3xl max-h-[500px]"
+                />
               )}
             </div>
 
             {/* RIGHT */}
-            <div className="bg-white p-8 rounded-3xl shadow-xl space-y-6 h-fit">
-
-              {error && (
-                <div className="bg-red-100 text-red-600 p-3 rounded-xl">
-                  ⚠️ {error}
-                </div>
-              )}
-
-              {result && (
-                <>
-                  <h2 className="text-2xl font-bold">Bird Details</h2>
-                  <p><strong>Category:</strong> {result.category}</p>
-                  <p><strong>Habitat:</strong> {result.habitat_en}</p>
-                  <p><strong>Diet:</strong> {result.diet_en}</p>
-                </>
-              )}
-
-              <div className="flex gap-4">
-                {videoPreview && (
-                  <a href={videoPreview} download="processed-video.mp4" className="px-5 py-3 bg-black text-white rounded-xl">
-                    Download Video
-                  </a>
-                )}
-
-                <button onClick={resetState} className="px-5 py-3 bg-black text-white rounded-xl">
-                  Upload Another
-                </button>
-              </div>
-            </div>
+            <BirdDetailsCard
+              result={result}
+              error={error}
+              videoPreview={videoPreview}
+              resetState={resetState}
+            />
 
           </div>
         )}
