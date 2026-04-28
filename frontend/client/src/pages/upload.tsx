@@ -148,7 +148,7 @@ export default function Upload() {
           <button
             onClick={() => { setMode("image"); resetState(); }}
             className={`px-5 py-2 rounded-xl ${
-              mode === "image" ? "bg-green-700 text-white" : "bg-gray-200"
+              mode === "image" ? "bg-primary/90 text-white" : "bg-gray-200"
             }`}
           >
             Image
@@ -157,7 +157,7 @@ export default function Upload() {
           <button
             onClick={() => { setMode("video"); resetState(); }}
             className={`px-5 py-2 rounded-xl ${
-              mode === "video" ? "bg-green-700 text-white" : "bg-gray-200"
+              mode === "video" ? "bg-primary/90 text-white" : "bg-gray-200"
             }`}
           >
             Video

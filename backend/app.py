@@ -6,8 +6,12 @@ from torchvision import transforms, models
 from torch import nn
 from ultralytics import YOLO
 
+from live_feed import live_bp
+
 app = Flask(__name__)
 CORS(app)
+
+app.register_blueprint(live_bp)
 
 # ---- Paths ----
 base = os.path.join(os.path.dirname(__file__), "models")

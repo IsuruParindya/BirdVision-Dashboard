@@ -23,3 +23,7 @@ export const predictVideo = async (file: File) => {
 
   return res.json();
 };
+
+export const getLiveFeedUrl = () => {
+  return `${API_BASE}/live-feed`;
+};
