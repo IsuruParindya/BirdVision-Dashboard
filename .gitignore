@@ -21,6 +21,10 @@ Thumbs.db
 *.log
 *.tmp
 
+# Database
+*.db
+backend/birdvision.db
+
 # Saved detection outputs
 backend/saved_images/
 backend/*.jpg

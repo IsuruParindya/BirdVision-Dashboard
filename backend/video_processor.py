@@ -14,8 +14,6 @@ from config import (
 from classifier import classify
 from label_drawer import draw_label
 from performance import update_performance
-
-# DATABASE
 from database import save_detection
 
 
@@ -24,10 +22,6 @@ def predict_video():
         start_time = time.time()
 
         file = request.files["image"]
-
-        # =========================
-        # TEMP FILES
-        # =========================
 
         input_path = tempfile.mktemp(
             suffix=".mp4"
@@ -39,18 +33,9 @@ def predict_video():
 
         file.save(input_path)
 
-        # =========================
-        # OPEN VIDEO
-        # =========================
-
         cap = cv2.VideoCapture(
             input_path
         )
-
-        if not cap.isOpened():
-            return jsonify({
-                "error": "Invalid video file"
-            })
 
         fps = int(
             cap.get(
@@ -58,7 +43,6 @@ def predict_video():
             )
         )
 
-        # fallback if fps broken
         if fps <= 0:
             fps = 25
 
@@ -74,34 +58,15 @@ def predict_video():
             )
         )
 
-        if w <= 0 or h <= 0:
-            return jsonify({
-                "error": "Invalid video dimensions"
-            })
-
-        # =========================
-        # OUTPUT VIDEO
-        # use mp4v
-        # =========================
-
         out = cv2.VideoWriter(
             output_path,
-            cv2.VideoWriter_fourcc(*"mp4v"),
+            cv2.VideoWriter_fourcc(*"avc1"),
             fps,
             (w, h)
         )
 
-        if not out.isOpened():
-            return jsonify({
-                "error": "Failed to create output video"
-            })
-
         detected_info = None
         frame_count = 0
-
-        # =========================
-        # PROCESS FRAMES
-        # =========================
 
         while True:
             ret, frame = cap.read()
@@ -140,14 +105,12 @@ def predict_video():
                 ]
 
                 if crop.size != 0:
-                    raw, conf = classify(
-                        crop
-                    )
+                    raw, conf = classify(crop)
 
                     if conf > 0.6:
                         detected_info = {
                             "raw": raw,
-                            "confidence": float(conf),
+                            "confidence": conf,
                             "englishName": raw.replace(
                                 "_",
                                 " "
@@ -176,109 +139,105 @@ def predict_video():
         cap.release()
         out.release()
 
-        # =========================
-        # NO DETECTION
-        # =========================
-
-        if not detected_info:
-            return jsonify({
-                "error": "No bird detected in video"
-            })
-
-        # =========================
-        # READ FINAL VIDEO
-        # =========================
-
         with open(
             output_path,
             "rb"
         ) as f:
             video_bytes = f.read()
 
-        details = species_info.get(
-            detected_info["raw"],
-            {}
-        )
-
-        sinhala_name = sinhala.get(
-            detected_info["raw"],
-            ""
+        details = (
+            species_info.get(
+                detected_info["raw"],
+                {}
+            )
+            if detected_info
+            else {}
         )
 
         # =========================
-        # SAVE TO DATABASE
-        # IMPORTANT PART
+        # SAVE VIDEO DETECTION
         # =========================
 
-        save_detection(
-            english_name=detected_info["englishName"],
-            sinhala_name=sinhala_name,
-            confidence=float(
+        if detected_info:
+            sinhala_name = sinhala.get(
+                detected_info["raw"],
+                ""
+            )
+
+            print(
+                "Saving VIDEO detection:",
+                detected_info["englishName"],
+                sinhala_name,
                 detected_info["confidence"]
-            ),
-            habitat=details.get(
-                "habitat_en",
-                ""
-            ),
-            diet=details.get(
-                "diet_en",
-                ""
-            ),
-            image_url="",
-            source_type="video"
-        )
+            )
 
-        print(
-            "VIDEO DETECTION SAVED:",
-            detected_info["englishName"]
-        )
+            save_detection(
+                english_name=detected_info["englishName"],
+                sinhala_name=sinhala_name,
+                confidence=float(
+                    detected_info["confidence"]
+                ),
+                habitat=details.get(
+                    "habitat_en",
+                    ""
+                ),
+                diet=details.get(
+                    "diet_en",
+                    ""
+                ),
+                image_url="",
+                source_type="video"
+            )
 
-        # =========================
-        # PERFORMANCE
-        # =========================
+            print(
+                "VIDEO detection saved successfully"
+            )
 
         update_performance(
             start_time,
             frame_count
         )
 
-        # =========================
-        # RESPONSE
-        # =========================
-
         return jsonify({
             "video": base64.b64encode(
                 video_bytes
             ).decode("utf-8"),
 
-            "englishName":
-                detected_info["englishName"],
+            "englishName": (
+                detected_info["englishName"]
+                if detected_info
+                else ""
+            ),
 
-            "sinhalaName":
-                sinhala_name,
-
-            "confidence":
-                detected_info["confidence"],
-
-            "category":
-                details.get(
-                    "category",
+            "sinhalaName": (
+                sinhala.get(
+                    detected_info["raw"],
                     ""
-                ),
+                )
+                if detected_info
+                else ""
+            ),
 
-            "habitat_en":
-                details.get(
-                    "habitat_en",
-                    ""
-                ),
+            "confidence": (
+                detected_info["confidence"]
+                if detected_info
+                else 0
+            ),
 
-            "diet_en":
-                details.get(
-                    "diet_en",
-                    ""
-                ),
+            "category": details.get(
+                "category",
+                ""
+            ),
 
-            "source_type": "video"
+            "habitat_en": details.get(
+                "habitat_en",
+                ""
+            ),
+
+            "diet_en": details.get(
+                "diet_en",
+                ""
+            )
         })
 
     except Exception as e:
