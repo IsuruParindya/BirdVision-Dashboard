@@ -332,8 +332,7 @@ export default function Upload() {
                     src={videoPreview}
                     type="video/mp4"
                   />
-
-                  Your browser does not support video.
+                  
                 </video>
               ) : preview ? (
                 <img

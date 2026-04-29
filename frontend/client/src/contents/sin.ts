@@ -22,6 +22,9 @@ export default {
     subtitle:
       "සජීවී පක්ෂි ජාති නිරීක්ෂණ සහ හඳුනාගැනීමේ පද්ධතිය.",
 
+    recentImageDetections: "මෑත රූප අනාවරණ",
+    recentVideoDetections: "මෑත වීඩියෝ අනාවරණ",
+
     stats: {
       totalDetections: "සම්පූර්ණ අනාවරණ",
       speciesIdentified: "හැඳින්වූ ජාති",
@@ -90,7 +93,6 @@ export default {
     analyzing: "විශ්ලේෂණය කරමින්...",
   },
 
-  /* NEW ADDED */
   birdDetailsCard: {
     title: "කුරුළු විස්තර",
     subtitle: "හඳුනාගත් කුරුළු තොරතුරු",

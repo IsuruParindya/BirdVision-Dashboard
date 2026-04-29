@@ -212,7 +212,10 @@ export default function Dashboard() {
 
           {/* IMAGE DETECTIONS */}
           <RecentDetections
-            title="Recent Image Detections"
+            title={getBoth(
+              e.recentImageDetections,
+              s.recentImageDetections
+            )}
             detections={imageDetections}
             detectionsLoading={
               detectionsLoading
@@ -225,7 +228,10 @@ export default function Dashboard() {
 
           {/* VIDEO DETECTIONS */}
           <RecentDetections
-            title="Recent Video Detections"
+            title={getBoth(
+              e.recentVideoDetections,
+              s.recentVideoDetections
+            )}
             detections={videoDetections}
             detectionsLoading={
               detectionsLoading

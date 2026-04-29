@@ -191,30 +191,33 @@ ${getBoth(
       )}
 
       {/* ACTION BUTTONS */}
-      <div className="flex gap-4 mt-8">
+      <div className="mt-8 flex items-center justify-between gap-4">
 
-        {videoPreview && (
+        {videoPreview ? (
           <a
             href={videoPreview}
             download="processed-video.mp4"
-            className="px-5 py-3 bg-primary/90 text-white rounded-xl"
+            className="px-5 py-3 bg-primary/90 text-white rounded-xl min-w-[170px] text-center"
           >
             {getBoth(
               e.downloadVideo,
               s.downloadVideo
             )}
           </a>
+        ) : (
+          <div />
         )}
 
         <button
           onClick={resetState}
-          className="px-5 py-3 bg-primary/90 text-white rounded-xl"
+          className="px-5 py-3 bg-primary/90 text-white rounded-xl min-w-[170px] text-center"
         >
           {getBoth(
             e.uploadAnother,
             s.uploadAnother
           )}
         </button>
+
       </div>
     </div>
   );

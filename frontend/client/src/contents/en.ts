@@ -18,11 +18,14 @@ export default {
   },
 
   dashboard: {
-    title: "Dashboard",
-    subtitle:
-      "Real-time bird species monitoring and identification system.",
+  title: "Dashboard",
+  subtitle:
+    "Real-time bird species monitoring and identification system.",
 
-    stats: {
+  recentImageDetections: "Recent Image Detections",
+  recentVideoDetections: "Recent Video Detections",
+
+  stats: {
       totalDetections: "Total Detections",
       speciesIdentified: "Species Identified",
       avgConfidence: "Avg. Confidence",
@@ -90,7 +93,6 @@ export default {
     analyzing: "Analyzing...",
   },
 
-  /* NEW ADDED */
   birdDetailsCard: {
     title: "Bird Details",
     subtitle: "Detected Bird Information",
