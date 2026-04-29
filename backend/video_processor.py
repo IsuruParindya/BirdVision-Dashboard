@@ -68,8 +68,6 @@ def predict_video():
         detected_info = None
         frame_count = 0
 
-        # UX FIX:
-        # latest processed preview frame
         preview_frame = ""
 
         while True:
@@ -138,8 +136,6 @@ def predict_video():
                         detected_info["confidence"]
                     )
 
-            # UX FIX:
-            # create preview image every 10 frames
             if frame_count % 10 == 0:
                 success, buffer = cv2.imencode(
                     ".jpg",
@@ -220,8 +216,6 @@ def predict_video():
                 video_bytes
             ).decode("utf-8"),
 
-            # UX FIX:
-            # latest processed preview frame
             "preview_frame": preview_frame,
 
             "englishName": (
