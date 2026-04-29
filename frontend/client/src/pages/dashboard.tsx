@@ -207,8 +207,8 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* IMAGE + VIDEO DETECTIONS SIDE BY SIDE */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* IMAGE + VIDEO DETECTIONS VERTICAL */}
+        <div className="space-y-6">
 
           {/* IMAGE DETECTIONS */}
           <RecentDetections
