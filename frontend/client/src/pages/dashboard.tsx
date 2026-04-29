@@ -207,31 +207,36 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* IMAGE DETECTIONS */}
-        <RecentDetections
-          title="Recent Image Detections"
-          detections={imageDetections}
-          detectionsLoading={
-            detectionsLoading
-          }
-          getBoth={getBoth}
-          e={e}
-          s={s}
-          handleDelete={handleDelete}
-        />
+        {/* IMAGE + VIDEO DETECTIONS SIDE BY SIDE */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-        {/* VIDEO DETECTIONS */}
-        <RecentDetections
-          title="Recent Video Detections"
-          detections={videoDetections}
-          detectionsLoading={
-            detectionsLoading
-          }
-          getBoth={getBoth}
-          e={e}
-          s={s}
-          handleDelete={handleDelete}
-        />
+          {/* IMAGE DETECTIONS */}
+          <RecentDetections
+            title="Recent Image Detections"
+            detections={imageDetections}
+            detectionsLoading={
+              detectionsLoading
+            }
+            getBoth={getBoth}
+            e={e}
+            s={s}
+            handleDelete={handleDelete}
+          />
+
+          {/* VIDEO DETECTIONS */}
+          <RecentDetections
+            title="Recent Video Detections"
+            detections={videoDetections}
+            detectionsLoading={
+              detectionsLoading
+            }
+            getBoth={getBoth}
+            e={e}
+            s={s}
+            handleDelete={handleDelete}
+          />
+
+        </div>
 
       </div>
     </AppLayout>

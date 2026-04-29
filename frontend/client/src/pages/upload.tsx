@@ -325,7 +325,6 @@ export default function Upload() {
               {videoPreview ? (
                 <video
                   controls
-                  autoPlay
                   preload="auto"
                   className="rounded-3xl max-h-[500px]"
                 >

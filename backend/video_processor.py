@@ -68,6 +68,10 @@ def predict_video():
         detected_info = None
         frame_count = 0
 
+        # UX FIX:
+        # latest processed preview frame
+        preview_frame = ""
+
         while True:
             ret, frame = cap.read()
 
@@ -133,6 +137,19 @@ def predict_video():
                         sinhala_name,
                         detected_info["confidence"]
                     )
+
+            # UX FIX:
+            # create preview image every 10 frames
+            if frame_count % 10 == 0:
+                success, buffer = cv2.imencode(
+                    ".jpg",
+                    frame
+                )
+
+                if success:
+                    preview_frame = base64.b64encode(
+                        buffer
+                    ).decode("utf-8")
 
             out.write(frame)
 
@@ -202,6 +219,10 @@ def predict_video():
             "video": base64.b64encode(
                 video_bytes
             ).decode("utf-8"),
+
+            # UX FIX:
+            # latest processed preview frame
+            "preview_frame": preview_frame,
 
             "englishName": (
                 detected_info["englishName"]
