@@ -20,3 +20,10 @@ Thumbs.db
 # Temporary files
 *.log
 *.tmp
+
+# Saved detection outputs
+backend/saved_images/
+backend/*.jpg
+backend/*.jpeg
+backend/*.png
+backend/*.mp4
