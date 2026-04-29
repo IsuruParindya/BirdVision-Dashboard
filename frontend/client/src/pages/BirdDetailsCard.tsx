@@ -150,10 +150,10 @@ export default function BirdDetailsCard({
                 s.diet
               )}: ${result.diet_en || "-"}
 
-${getBoth(
-  e.habitat,
-  s.habitat
-)}: ${result.habitat_en || "-"}`}
+              ${getBoth(
+                e.habitat,
+                s.habitat
+              )}: ${result.habitat_en || "-"}`}
               icon={
                 <div className="flex flex-col gap-2">
                   <Drumstick
