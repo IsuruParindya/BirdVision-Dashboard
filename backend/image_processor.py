@@ -15,7 +15,7 @@ from config import (
 
 from classifier import classify
 from label_drawer import draw_label
-from performance import update_performance
+from performance import update_performance, update_accuracy
 
 # database
 from database import save_detection
@@ -95,6 +95,8 @@ def predict_image():
         # =========================
 
         raw, conf = classify(crop)
+
+        update_accuracy(conf)
 
         if conf < 0.6:
             return jsonify({

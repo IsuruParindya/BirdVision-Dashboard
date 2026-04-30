@@ -13,7 +13,7 @@ from config import (
 
 from classifier import classify
 from label_drawer import draw_label
-from performance import update_performance
+from performance import update_performance, update_accuracy
 from database import save_detection
 
 
@@ -67,7 +67,6 @@ def predict_video():
 
         detected_info = None
         frame_count = 0
-
         preview_frame = ""
 
         while True:
@@ -108,6 +107,8 @@ def predict_video():
 
                 if crop.size != 0:
                     raw, conf = classify(crop)
+
+                    update_accuracy(conf)
 
                     if conf > 0.6:
                         detected_info = {
