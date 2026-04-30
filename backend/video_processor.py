@@ -2,20 +2,12 @@ import cv2
 import base64
 import tempfile
 import time
-
 from flask import request, jsonify
-
-from config import (
-    detector,
-    sinhala,
-    species_info
-)
-
+from config import (detector,sinhala,species_info)
 from classifier import classify
 from label_drawer import draw_label
 from performance import update_performance, update_accuracy
 from database import save_detection
-
 
 def predict_video():
     try:
@@ -111,10 +103,15 @@ def predict_video():
                     update_accuracy(conf)
 
                     if conf > 0.6:
+                        raw_key = raw.lower().replace(
+                            " ",
+                            "_"
+                        ).strip()
+
                         detected_info = {
-                            "raw": raw,
+                            "raw": raw_key,
                             "confidence": conf,
-                            "englishName": raw.replace(
+                            "englishName": raw_key.replace(
                                 "_",
                                 " "
                             ).title()
@@ -158,6 +155,10 @@ def predict_video():
             "rb"
         ) as f:
             video_bytes = f.read()
+
+        # =========================
+        # GET BIRD DETAILS
+        # =========================
 
         details = (
             species_info.get(
@@ -207,10 +208,18 @@ def predict_video():
                 "VIDEO detection saved successfully"
             )
 
+        # =========================
+        # PERFORMANCE UPDATE
+        # =========================
+
         update_performance(
             start_time,
             frame_count
         )
+
+        # =========================
+        # FINAL RESPONSE
+        # =========================
 
         return jsonify({
             "video": base64.b64encode(
@@ -250,8 +259,18 @@ def predict_video():
                 ""
             ),
 
+            "habitat_si": details.get(
+                "habitat_si",
+                ""
+            ),
+
             "diet_en": details.get(
                 "diet_en",
+                ""
+            ),
+
+            "diet_si": details.get(
+                "diet_si",
                 ""
             )
         })

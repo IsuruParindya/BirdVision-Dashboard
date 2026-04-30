@@ -103,20 +103,33 @@ def predict_image():
                 "error": "Unknown bird"
             })
 
-        english = raw.replace(
+        # =========================
+        # NORMALIZE CLASSIFIER OUTPUT
+        # =========================
+
+        raw_key = raw.lower().replace(
+            " ",
+            "_"
+        ).strip()
+
+        english = raw_key.replace(
             "_",
             " "
         ).title()
 
         sinhala_name = sinhala.get(
-            raw,
+            raw_key,
             ""
         )
 
         details = species_info.get(
-            raw,
+            raw_key,
             {}
         )
+
+        print("RAW:", raw)
+        print("RAW KEY:", raw_key)
+        print("DETAILS FOUND:", details)
 
         # =========================
         # DRAW LABEL
@@ -161,7 +174,9 @@ def predict_image():
             frame
         )
 
-        image_url = f"/saved_images/{filename}"
+        image_url = (
+            f"http://127.0.0.1:5000/saved_images/{filename}"
+        )
 
         # =========================
         # BASE64 RESPONSE
@@ -223,18 +238,32 @@ def predict_image():
             "englishName": english,
             "sinhalaName": sinhala_name,
             "confidence": float(conf),
+
             "category": details.get(
                 "category",
                 ""
             ),
+
             "habitat_en": details.get(
                 "habitat_en",
                 ""
             ),
+
+            "habitat_si": details.get(
+                "habitat_si",
+                ""
+            ),
+
             "diet_en": details.get(
                 "diet_en",
                 ""
             ),
+
+            "diet_si": details.get(
+                "diet_si",
+                ""
+            ),
+
             "image_url": image_url,
             "source_type": "image"
         })

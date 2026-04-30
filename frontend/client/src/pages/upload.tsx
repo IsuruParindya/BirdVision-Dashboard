@@ -16,15 +16,15 @@ type Result = {
   sinhalaName: string;
   confidence: number;
   habitat_en: string;
+  habitat_si: string;
   diet_en: string;
+  diet_si: string;
 };
 
 export default function Upload() {
   const [mode, setMode] = useState<"image" | "video">("image");
-
   const [preview, setPreview] = useState<string | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
-
   const [result, setResult] = useState<Result | null>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -40,10 +40,7 @@ export default function Upload() {
   const e = en.upload;
   const s = sin.upload;
 
-  const getBoth = (
-    eVal: string,
-    sVal: string
-  ) =>
+  const getBoth = (eVal: string, sVal: string) =>
     language === "both"
       ? `${eVal} / ${sVal}`
       : language === "sinhala"
@@ -55,6 +52,23 @@ export default function Upload() {
     setVideoPreview(null);
     setResult(null);
     setError(null);
+  };
+
+  const setBirdResult = (
+    data: any,
+    confidence: number
+  ) => {
+    setResult({
+      englishName: data.englishName || "",
+      sinhalaName: data.sinhalaName || "",
+      confidence,
+
+      habitat_en: data.habitat_en || "",
+      habitat_si: data.habitat_si || "",
+
+      diet_en: data.diet_en || "",
+      diet_si: data.diet_si || ""
+    });
   };
 
   /* =========================
@@ -81,63 +95,30 @@ export default function Upload() {
           return;
         }
 
-        /*
-          IMPORTANT FIX:
-          use base64 video from backend
-          NOT video_url
-        */
-
         if (data.video) {
-          const binaryString =
-            window.atob(data.video);
+          const binaryString = window.atob(data.video);
+          const bytes = new Uint8Array(binaryString.length);
 
-          const len =
-            binaryString.length;
-
-          const bytes =
-            new Uint8Array(len);
-
-          for (
-            let i = 0;
-            i < len;
-            i++
-          ) {
-            bytes[i] =
-              binaryString.charCodeAt(i);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
           }
 
           const blob = new Blob(
             [bytes],
-            {
-              type: "video/mp4"
-            }
+            { type: "video/mp4" }
           );
 
-          const videoUrl =
-            URL.createObjectURL(blob);
-
           setVideoPreview(
-            videoUrl
+            URL.createObjectURL(blob)
           );
         }
 
-        setResult({
-          englishName:
-            data.englishName || "",
-
-          sinhalaName:
-            data.sinhalaName || "",
-
-          confidence: Math.round(
+        setBirdResult(
+          data,
+          Math.round(
             (data.confidence || 0) * 100
-          ),
-
-          habitat_en:
-            data.habitat_en || "",
-
-          diet_en:
-            data.diet_en || ""
-        });
+          )
+        );
 
         setLoading(false);
         return;
@@ -146,13 +127,11 @@ export default function Upload() {
       /* ================= IMAGE ================= */
 
       setMode("image");
-
       setPreview(
         URL.createObjectURL(file)
       );
 
-      const data =
-        await predictImage(file);
+      const data = await predictImage(file);
 
       if (data.error) {
         setError(data.error);
@@ -161,7 +140,7 @@ export default function Upload() {
       }
 
       let conf = Math.round(
-        data.confidence * 100
+        (data.confidence || 0) * 100
       );
 
       if (conf >= 100) {
@@ -175,32 +154,13 @@ export default function Upload() {
           );
         }
 
-        setResult({
-          englishName:
-            data.englishName || "",
-
-          sinhalaName:
-            data.sinhalaName || "",
-
-          confidence: conf,
-
-          habitat_en:
-            data.habitat_en || "",
-
-          diet_en:
-            data.diet_en || ""
-        });
-
+        setBirdResult(data, conf);
         setLoading(false);
       }, 1200);
 
     } catch (error) {
       console.error(error);
-
-      setError(
-        "Connection failed"
-      );
-
+      setError("Connection failed");
       setLoading(false);
     }
   };
@@ -220,7 +180,6 @@ export default function Upload() {
           {loading && (
             <motion.div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
-
                 <div className="w-12 h-12 border-4 border-gray-300 border-t-green-700 rounded-full animate-spin" />
 
                 <p>
@@ -229,7 +188,6 @@ export default function Upload() {
                     s.analyzing
                   )}
                 </p>
-
               </div>
             </motion.div>
           )}
@@ -237,7 +195,6 @@ export default function Upload() {
 
         {/* TITLE */}
         <div className="text-center space-y-4">
-
           <h1 className="text-4xl font-bold">
             {getBoth(
               e.title,
@@ -260,9 +217,8 @@ export default function Upload() {
             </span>
           </p>
 
-          {/* TAB SWITCH */}
+          {/* MODE SWITCH */}
           <div className="flex justify-center gap-4 pt-1">
-
             <button
               onClick={() => {
                 setMode("image");
@@ -296,7 +252,6 @@ export default function Upload() {
                 s.tabVideo
               )}
             </button>
-
           </div>
         </div>
 
@@ -321,7 +276,6 @@ export default function Upload() {
 
             {/* LEFT */}
             <div className="flex justify-center">
-
               {videoPreview ? (
                 <video
                   controls
@@ -332,7 +286,6 @@ export default function Upload() {
                     src={videoPreview}
                     type="video/mp4"
                   />
-                  
                 </video>
               ) : preview ? (
                 <img
@@ -341,7 +294,6 @@ export default function Upload() {
                   className="rounded-3xl max-h-[500px]"
                 />
               ) : null}
-
             </div>
 
             {/* RIGHT */}
@@ -351,7 +303,6 @@ export default function Upload() {
               videoPreview={videoPreview}
               resetState={resetState}
             />
-
           </div>
         )}
       </div>

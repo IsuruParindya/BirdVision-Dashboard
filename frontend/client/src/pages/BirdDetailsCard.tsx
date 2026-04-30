@@ -1,4 +1,4 @@
-import {Bird,MapPin,Drumstick} from "lucide-react";
+import { Bird, MapPin, Drumstick } from "lucide-react";
 import { useLanguage } from "@/pages/LanguageContext";
 import en from "@/contents/en";
 import sin from "@/contents/sin";
@@ -10,7 +10,9 @@ type Result = {
   sinhalaName: string;
   confidence: number;
   habitat_en: string;
+  habitat_si: string;
   diet_en: string;
+  diet_si: string;
 };
 
 type Props = {
@@ -77,6 +79,34 @@ export default function BirdDetailsCard({
       ? sVal
       : eVal;
 
+  const getDietValue = () => {
+    if (!result) return "-";
+
+    if (language === "sinhala") {
+      return result.diet_si || "-";
+    }
+
+    if (language === "both") {
+      return `${result.diet_en || "-"} / ${result.diet_si || "-"}`;
+    }
+
+    return result.diet_en || "-";
+  };
+
+  const getHabitatValue = () => {
+    if (!result) return "-";
+
+    if (language === "sinhala") {
+      return result.habitat_si || "-";
+    }
+
+    if (language === "both") {
+      return `${result.habitat_en || "-"} / ${result.habitat_si || "-"}`;
+    }
+
+    return result.habitat_en || "-";
+  };
+
   return (
     <div className="glass-card rounded-[28px] p-5 lg:p-7 h-fit">
 
@@ -86,7 +116,7 @@ export default function BirdDetailsCard({
           ⚠️ {error}
         </div>
       )}
-      
+
       {result ? (
         <>
           {/* HEADER */}
@@ -114,6 +144,7 @@ export default function BirdDetailsCard({
 
           {/* CONTENT */}
           <div className="mt-6 space-y-4">
+
             <InfoCard
               title={getBoth(
                 e.englishName,
@@ -142,12 +173,12 @@ export default function BirdDetailsCard({
               value={`${getBoth(
                 e.diet,
                 s.diet
-              )}: ${result.diet_en || "-"}
+              )}: ${getDietValue()}
 
-              ${getBoth(
+${getBoth(
                 e.habitat,
                 s.habitat
-              )}: ${result.habitat_en || "-"}`}
+              )}: ${getHabitatValue()}`}
               icon={
                 <div className="flex flex-col gap-2">
                   <Drumstick
