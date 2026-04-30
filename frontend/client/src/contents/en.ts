@@ -27,7 +27,7 @@ export default {
 
   stats: {
       totalDetections: "Total Detections",
-      speciesIdentified: "Species Identified",
+      speciesIdentified: "Bird Species Identified",
       avgConfidence: "Avg. Confidence",
       mostDetected: "Most Detected",
     },

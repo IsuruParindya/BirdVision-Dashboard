@@ -27,8 +27,8 @@ export default {
 
     stats: {
       totalDetections: "සම්පූර්ණ අනාවරණ",
-      speciesIdentified: "හැඳින්වූ ජාති",
-      avgConfidence: "සරසාමාන්‍ය විශ්වාසය",
+      speciesIdentified: "හඳුනාගත් පක්ෂි විශේෂ",
+      avgConfidence: "සාමාන්‍ය විශ්වාස මට්ටම",
       mostDetected: "වැඩිපුර අනාවරණය වූ",
     },
 

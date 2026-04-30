@@ -1,9 +1,4 @@
-import {
-  Bird,
-  MapPin,
-  Drumstick
-} from "lucide-react";
-
+import {Bird,MapPin,Drumstick} from "lucide-react";
 import { useLanguage } from "@/pages/LanguageContext";
 import en from "@/contents/en";
 import sin from "@/contents/sin";
@@ -91,8 +86,7 @@ export default function BirdDetailsCard({
           ⚠️ {error}
         </div>
       )}
-
-      {/* RESULT */}
+      
       {result ? (
         <>
           {/* HEADER */}

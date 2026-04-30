@@ -1,23 +1,10 @@
 import { useEffect } from "react";
-import {
-  useDetections,
-  useStats
-} from "@/hooks/use-birdvision";
-
+import {useDetections,useStats} from "@/hooks/use-birdvision";
 import { deleteDetection } from "@/api";
-
 import { AppLayout } from "@/components/layout/app-layout";
 import { StatCard } from "@/components/ui/stat-card";
-
-import {
-  Bird,
-  CheckCircle2,
-  Camera,
-  ScanEye
-} from "lucide-react";
-
+import {Bird,CheckCircle2,Camera,ScanEye} from "lucide-react";
 import RecentDetections from "./RecentDetections";
-
 import { useLanguage } from "./LanguageContext";
 import en from "@/contents/en";
 import sin from "@/contents/sin";
