@@ -127,9 +127,11 @@ export default function Upload() {
       /* ================= IMAGE ================= */
 
       setMode("image");
-      setPreview(
-        URL.createObjectURL(file)
-      );
+
+      // Set preview immediately so the image is visible behind
+      // the blur overlay while analysis is in progress
+      const immediatePreview = URL.createObjectURL(file);
+      setPreview(immediatePreview);
 
       const data = await predictImage(file);
 
@@ -173,25 +175,7 @@ export default function Upload() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-6 py-10 space-y-10 relative">
-
-        {/* LOADING */}
-        <AnimatePresence>
-          {loading && (
-            <motion.div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-gray-300 border-t-green-700 rounded-full animate-spin" />
-
-                <p>
-                  {getBoth(
-                    e.analyzing,
-                    s.analyzing
-                  )}
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
 
         {/* TITLE */}
         <div className="text-center space-y-4">
@@ -255,56 +239,83 @@ export default function Upload() {
           </div>
         </div>
 
-        {/* UPLOAD SECTION */}
-        <UploadMediaSection
-          mode={mode}
-          preview={preview}
-          videoPreview={videoPreview}
-          result={result}
-          isDragging={isDragging}
-          fileInputRef={fileInputRef}
-          setIsDragging={setIsDragging}
-          handleFile={handleFile}
-          getBoth={getBoth}
-          e={e}
-          s={s}
-        />
+        {/* UPLOAD + RESULT WRAPPER — single relative container so overlay covers image too */}
+        <div className="relative space-y-10">
 
-        {/* RESULT SECTION */}
-        {hasResult && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
+          {/* BLUR OVERLAY — covers both upload section and result image */}
+          <AnimatePresence>
+            {loading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center rounded-2xl"
+              >
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 border-4 border-gray-300 border-t-green-700 rounded-full animate-spin" />
+                  <p>
+                    {getBoth(
+                      e.analyzing,
+                      s.analyzing
+                    )}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-            {/* LEFT */}
-            <div className="flex justify-center">
-              {videoPreview ? (
-                <video
-                  controls
-                  preload="auto"
-                  className="rounded-3xl max-h-[500px]"
-                >
-                  <source
-                    src={videoPreview}
-                    type="video/mp4"
+          {/* UPLOAD SECTION */}
+          <UploadMediaSection
+            mode={mode}
+            preview={preview}
+            videoPreview={videoPreview}
+            result={result}
+            isDragging={isDragging}
+            fileInputRef={fileInputRef}
+            setIsDragging={setIsDragging}
+            handleFile={handleFile}
+            getBoth={getBoth}
+            e={e}
+            s={s}
+          />
+
+          {/* RESULT SECTION */}
+          {hasResult && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
+
+              {/* LEFT — image/video preview */}
+              <div className="flex justify-center">
+                {videoPreview ? (
+                  <video
+                    controls
+                    preload="auto"
+                    className="rounded-3xl max-h-[500px]"
+                  >
+                    <source
+                      src={videoPreview}
+                      type="video/mp4"
+                    />
+                  </video>
+                ) : preview ? (
+                  <img
+                    src={preview}
+                    alt="Bird Preview"
+                    className="rounded-3xl max-h-[500px]"
                   />
-                </video>
-              ) : preview ? (
-                <img
-                  src={preview}
-                  alt="Bird Preview"
-                  className="rounded-3xl max-h-[500px]"
-                />
-              ) : null}
-            </div>
+                ) : null}
+              </div>
 
-            {/* RIGHT */}
-            <BirdDetailsCard
-              result={result}
-              error={error}
-              videoPreview={videoPreview}
-              resetState={resetState}
-            />
-          </div>
-        )}
+              {/* RIGHT — bird details */}
+              <BirdDetailsCard
+                result={result}
+                error={error}
+                videoPreview={videoPreview}
+                resetState={resetState}
+              />
+            </div>
+          )}
+
+        </div>
       </div>
     </AppLayout>
   );
