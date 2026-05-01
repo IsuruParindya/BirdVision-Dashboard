@@ -1,22 +1,15 @@
 import cv2
+import unicodedata
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from config import font_path
-
 
 def load_font(size):
     try:
         return ImageFont.truetype(font_path, size)
     except:
         return ImageFont.load_default()
-
-
-def draw_sinhala(draw, x, y, text, font):
-    for ch in text:
-        draw.text((x, y), ch, font=font, fill=(0, 0, 0))
-        x += font.getbbox(ch)[2]
-
 
 def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
     h, w, _ = frame.shape
@@ -36,30 +29,11 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
 
     # shading
     overlay = frame.copy()
-    cv2.rectangle(
-        overlay,
-        (x1, y1),
-        (x2, y2),
-        (0, 180, 100),
-        -1
-    )
-
-    frame = cv2.addWeighted(
-        overlay,
-        0.12,
-        frame,
-        0.88,
-        0
-    )
+    cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 180, 100), -1)
+    frame = cv2.addWeighted(overlay, 0.12, frame, 0.88, 0)
 
     # border
-    cv2.rectangle(
-        frame,
-        (x1, y1),
-        (x2, y2),
-        (0, 180, 100),
-        thickness
-    )
+    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 180, 100), thickness)
 
     # convert to PIL
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -67,6 +41,9 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
     draw = ImageDraw.Draw(pil)
 
     label_en = f"{english} ({int(conf * 100)}%)"
+
+    # ✅ Normalize Sinhala unicode before rendering
+    sinhala_name = unicodedata.normalize('NFC', sinhala_name)
 
     # background
     draw.rectangle(
@@ -81,14 +58,12 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
         font=font_en_dynamic,
         fill=(0, 0, 0)
     )
-
     # sinhala
-    draw_sinhala(
-        draw,
-        x1 + padding,
-        y1 - box_h + padding + font_size_en + 2,
+    draw.text(
+        (x1 + padding, y1 - box_h + padding + font_size_en + 2),
         sinhala_name,
-        font_si_dynamic
+        font=font_si_dynamic,
+        fill=(0, 0, 0)
     )
 
     frame = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
