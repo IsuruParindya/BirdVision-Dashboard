@@ -1,15 +1,15 @@
 import os
 import cv2
 import json
-import torch
 import numpy as np
 import time
 
 from flask import Blueprint, Response, request, jsonify
 from PIL import Image, ImageDraw, ImageFont
-from torchvision import transforms, models
-from torch import nn
-from ultralytics import YOLO
+
+# use shared config + classifier like image_processor.py / video_processor.py
+from config import detector, sinhala
+from classifier import classify
 
 live_bp = Blueprint("live_feed", __name__)
 
@@ -17,63 +17,11 @@ live_bp = Blueprint("live_feed", __name__)
 # PATHS
 # =========================
 
-base = os.path.join(os.path.dirname(__file__), "models")
-
 font_path = os.path.join(
     os.path.dirname(__file__),
     "fonts",
     "NotoSansSinhala-Regular.ttf"
 )
-
-pth = os.path.join(base, "bird_resnet50.pth")
-cls = os.path.join(base, "classes.json")
-si = os.path.join(base, "sinhala_map.json")
-yolo_path = os.path.join(base, "best.pt")
-
-classes = json.load(open(cls, encoding="utf-8"))
-sinhala = json.load(open(si, encoding="utf-8"))
-
-# =========================
-# DEVICE
-# =========================
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print("Running on:", device)
-
-# =========================
-# MODEL
-# =========================
-
-clf = models.resnet50(weights=None)
-clf.fc = nn.Linear(clf.fc.in_features, len(classes))
-clf.load_state_dict(torch.load(pth, map_location=device))
-clf = clf.to(device).eval()
-
-detector = YOLO(yolo_path)
-
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(
-        [0.485, 0.456, 0.406],
-        [0.229, 0.224, 0.225]
-    )
-])
-
-
-def classify(img):
-    img = Image.fromarray(
-        cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    )
-
-    x = transform(img).unsqueeze(0).to(device)
-
-    with torch.no_grad():
-        probs = torch.softmax(clf(x), dim=1)
-        conf, pred = torch.max(probs, 1)
-
-    return classes[int(pred)], float(conf)
-
 
 # =========================
 # FONT
@@ -96,8 +44,9 @@ def draw_sinhala(draw, x, y, text, font):
         )
         x += font.getbbox(ch)[2]
 
+
 # =========================
-# SAME DRAW LABEL AS app.py
+# DRAW LABEL
 # =========================
 
 def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
@@ -116,7 +65,6 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
 
     thickness = max(2, int(2 * scale))
 
-    # transparent shade inside bounding box
     overlay = frame.copy()
 
     cv2.rectangle(
@@ -135,7 +83,6 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
         0
     )
 
-    # border
     cv2.rectangle(
         frame,
         (x1, y1),
@@ -144,17 +91,12 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
         thickness
     )
 
-    rgb = cv2.cvtColor(
-        frame,
-        cv2.COLOR_BGR2RGB
-    )
-
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     pil = Image.fromarray(rgb)
     draw = ImageDraw.Draw(pil)
 
     label_en = f"{english} ({int(conf * 100)}%)"
 
-    # label background (same as app.py)
     draw.rectangle(
         [
             x1,
@@ -165,7 +107,6 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
         fill=(200, 220, 255)
     )
 
-    # English text
     draw.text(
         (
             x1 + padding,
@@ -176,7 +117,6 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
         fill=(0, 0, 0)
     )
 
-    # Sinhala text
     draw_sinhala(
         draw,
         x1 + padding,
@@ -192,11 +132,13 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
 
     return frame
 
+
 # =========================
 # CAMERA CONTROL
 # =========================
 
 active_camera = None
+
 
 def release_camera():
     global active_camera
@@ -230,6 +172,7 @@ def get_camera(camera_index=0):
     raise Exception(
         f"Camera index {camera_index} not found"
     )
+
 
 # =========================
 # STREAM
@@ -266,10 +209,6 @@ def generate_frames(camera_index=0):
 
         current_time = time.time()
 
-        # =========================
-        # DETECTION
-        # =========================
-
         if current_time - last_detect_time > DETECT_INTERVAL:
             last_boxes = []
             last_labels = []
@@ -298,13 +237,15 @@ def generate_frames(camera_index=0):
                     if conf < 0.45:
                         continue
 
-                    english = raw.replace(
+                    raw_key = raw.lower().replace(" ", "_").strip()
+
+                    english = raw_key.replace(
                         "_",
                         " "
                     ).title()
 
                     sinhala_name = sinhala.get(
-                        raw,
+                        raw_key,
                         ""
                     )
 
@@ -322,10 +263,6 @@ def generate_frames(camera_index=0):
 
             last_detect_time = current_time
 
-        # =========================
-        # DRAW SAME STYLE AS app.py
-        # =========================
-
         for i, box in enumerate(last_boxes):
             x1, y1, x2, y2 = box
             english, sinhala_name, conf = last_labels[i]
@@ -340,10 +277,6 @@ def generate_frames(camera_index=0):
                 sinhala_name,
                 conf
             )
-
-        # =========================
-        # STREAM RESPONSE
-        # =========================
 
         _, buffer = cv2.imencode(
             ".jpg",
@@ -360,6 +293,7 @@ def generate_frames(camera_index=0):
         )
 
     release_camera()
+
 
 # =========================
 # ROUTES
