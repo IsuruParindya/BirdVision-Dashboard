@@ -154,23 +154,25 @@ def get_camera(camera_index=0):
 
     release_camera()
 
-    cap = cv2.VideoCapture(
-        camera_index,
-        cv2.CAP_DSHOW
-    )
+    # Try the requested index first, then scan nearby indices as fallback
+    # This handles cases where Windows shifts camera indices on USB reconnect
+    candidates = [camera_index] + [i for i in range(5) if i != camera_index]
 
-    if cap.isOpened():
-        ret, _ = cap.read()
+    for idx in candidates:
+        cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
 
-        if ret:
-            print(f"Using camera index: {camera_index}")
-            active_camera = cap
-            return cap
+        if cap.isOpened():
+            ret, _ = cap.read()
+
+            if ret:
+                print(f"Using camera index: {idx}")
+                active_camera = cap
+                return cap
 
         cap.release()
 
     raise Exception(
-        f"Camera index {camera_index} not found"
+        f"No camera found near index {camera_index}"
     )
 
 
