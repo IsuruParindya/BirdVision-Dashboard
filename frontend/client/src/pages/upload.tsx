@@ -1,13 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import { motion, AnimatePresence } from "framer-motion";
 import { predictImage, predictVideo } from "@/api";
 import BirdDetailsCard from "@/pages/BirdDetailsCard";
 import UploadMediaSection from "@/pages/UploadMediaSection";
-
 import { useLanguage } from "@/pages/LanguageContext";
 import en from "@/contents/en";
 import sin from "@/contents/sin";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type LangMode = "english" | "sinhala" | "both";
 
@@ -21,228 +22,231 @@ type Result = {
   diet_si: string;
 };
 
+type TabState = {
+  preview: string | null;       // bounding-box image (both tabs use this)
+  result: Result | null;
+  videoBlob: string | null;     // live video URL — only kept while on video tab
+};
+
+// ─── Persistent store (survives navigation) ───────────────────────────────────
+
+const store: { image: TabState; video: TabState } = {
+  image: { preview: null, result: null, videoBlob: null },
+  video: { preview: null, result: null, videoBlob: null },
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Capture a single frame from a <video> element and return a base64 data-URL */
+function captureVideoFrame(videoEl: HTMLVideoElement): string | null {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width  = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
+    canvas.getContext("2d")?.drawImage(videoEl, 0, 0);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  } catch {
+    return null;
+  }
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function Upload() {
-  const [mode, setMode] = useState<"image" | "video">("image");
-  const [preview, setPreview] = useState<string | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [result, setResult] = useState<Result | null>(null);
-
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const { language } = useLanguage() as {
-    language: LangMode;
-  };
-
+  const { language } = useLanguage() as { language: LangMode };
   const e = en.upload;
   const s = sin.upload;
 
   const getBoth = (eVal: string, sVal: string) =>
-    language === "both"
-      ? `${eVal} / ${sVal}`
-      : language === "sinhala"
-      ? sVal
-      : eVal;
+    language === "both" ? `${eVal} / ${sVal}` : language === "sinhala" ? sVal : eVal;
 
-  const resetState = () => {
-    setPreview(null);
-    setVideoPreview(null);
-    setResult(null);
+  // Active tab
+  const [mode, setMode] = useState<"image" | "video">("image");
+
+  // UI state — always initialised from the store for the current tab
+  const [preview,      setPreview]      = useState<string | null>(store.image.preview);
+  const [videoBlob,    setVideoBlob]    = useState<string | null>(store.video.videoBlob);
+  const [result,       setResult]       = useState<Result | null>(store.image.result);
+  const [error,        setError]        = useState<string | null>(null);
+  const [loading,      setLoading]      = useState(false);
+  const [isDragging,   setIsDragging]   = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoElRef   = useRef<HTMLVideoElement>(null);   // ref to the rendered <video>
+
+  // ── Snapshot the video frame before the component unmounts ──────────────────
+  useEffect(() => {
+    return () => {
+      if (mode === "video" && videoElRef.current) {
+        const snapshot = captureVideoFrame(videoElRef.current);
+        if (snapshot) {
+          store.video.preview  = snapshot;
+          store.video.videoBlob = null;   // don't keep the heavy blob URL
+        }
+      }
+    };
+  }, [mode]);
+
+  // ── Switch tab ───────────────────────────────────────────────────────────────
+  const switchTab = (next: "image" | "video") => {
+    if (next === mode) return;
+
+    // Before leaving the video tab, snapshot the current frame
+    if (mode === "video" && videoElRef.current) {
+      const snapshot = captureVideoFrame(videoElRef.current);
+      if (snapshot) {
+        store.video.preview   = snapshot;
+        store.video.videoBlob = null;
+      }
+    }
+
+    setMode(next);
     setError(null);
+
+    if (next === "image") {
+      setPreview(store.image.preview);
+      setVideoBlob(null);
+      setResult(store.image.result);
+    } else {
+      // Show snapshot (if any) — live video only exists if user just ran detection
+      setPreview(store.video.preview);
+      setVideoBlob(store.video.videoBlob);
+      setResult(store.video.result);
+    }
   };
 
-  const setBirdResult = (
-    data: any,
-    confidence: number
-  ) => {
-    setResult({
+  // ── Reset ────────────────────────────────────────────────────────────────────
+  const resetState = () => {
+    setPreview(null);
+    setVideoBlob(null);
+    setResult(null);
+    setError(null);
+    if (mode === "image") {
+      store.image = { preview: null, result: null, videoBlob: null };
+    } else {
+      store.video = { preview: null, result: null, videoBlob: null };
+    }
+  };
+
+  // ── Build result object ──────────────────────────────────────────────────────
+  const applyResult = (data: any, confidence: number) => {
+    const r: Result = {
       englishName: data.englishName || "",
       sinhalaName: data.sinhalaName || "",
       confidence,
-
-      habitat_en: data.habitat_en || "",
-      habitat_si: data.habitat_si || "",
-
-      diet_en: data.diet_en || "",
-      diet_si: data.diet_si || ""
-    });
+      habitat_en:  data.habitat_en  || "",
+      habitat_si:  data.habitat_si  || "",
+      diet_en:     data.diet_en     || "",
+      diet_si:     data.diet_si     || "",
+    };
+    setResult(r);
+    return r;
   };
 
-  /* =========================
-     HANDLE FILE
-  ========================= */
-
+  // ── Handle uploaded file ─────────────────────────────────────────────────────
   const handleFile = async (file: File) => {
     if (!file) return;
-
     resetState();
     setLoading(true);
 
     try {
-      /* ================= VIDEO ================= */
-
+      /* ── VIDEO ── */
       if (file.type.startsWith("video")) {
         setMode("video");
 
         const data = await predictVideo(file);
 
-        if (data.error) {
-          setError(data.error);
-          setLoading(false);
-          return;
-        }
+        if (data.error) { setError(data.error); setLoading(false); return; }
 
+        // Decode returned annotated video
         if (data.video) {
-          const binaryString = window.atob(data.video);
-          const bytes = new Uint8Array(binaryString.length);
-
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-
-          const blob = new Blob(
-            [bytes],
-            { type: "video/mp4" }
-          );
-
-          setVideoPreview(
-            URL.createObjectURL(blob)
-          );
+          const bytes = Uint8Array.from(atob(data.video), c => c.charCodeAt(0));
+          const blob  = new Blob([bytes], { type: "video/mp4" });
+          const url   = URL.createObjectURL(blob);
+          setVideoBlob(url);
+          store.video.videoBlob = url;
         }
 
-        setBirdResult(
-          data,
-          Math.round(
-            (data.confidence || 0) * 100
-          )
-        );
-
+        const r  = applyResult(data, Math.round((data.confidence || 0) * 100));
+        store.video.result  = r;
+        store.video.preview = null;   // snapshot is taken on leave, not now
         setLoading(false);
         return;
       }
 
-      /* ================= IMAGE ================= */
-
+      /* ── IMAGE ── */
       setMode("image");
 
-      // Set preview immediately so the image is visible behind
-      // the blur overlay while analysis is in progress
-      const immediatePreview = URL.createObjectURL(file);
-      setPreview(immediatePreview);
+      // Show original immediately while API processes
+      const immediateUrl = URL.createObjectURL(file);
+      setPreview(immediateUrl);
 
       const data = await predictImage(file);
 
-      if (data.error) {
-        setError(data.error);
-        setLoading(false);
-        return;
-      }
+      if (data.error) { setError(data.error); setLoading(false); return; }
 
-      let conf = Math.round(
-        (data.confidence || 0) * 100
-      );
-
-      if (conf >= 100) {
-        conf = 99;
-      }
+      let conf = Math.round((data.confidence || 0) * 100);
+      if (conf >= 100) conf = 99;
 
       setTimeout(() => {
-        if (data.image) {
-          setPreview(
-            `data:image/jpeg;base64,${data.image}`
-          );
-        }
+        // Replace with bounding-box version returned by API
+        const bbUrl = data.image ? `data:image/jpeg;base64,${data.image}` : immediateUrl;
+        setPreview(bbUrl);
+        store.image.preview = bbUrl;
 
-        setBirdResult(data, conf);
+        const r = applyResult(data, conf);
+        store.image.result = r;
         setLoading(false);
       }, 1200);
 
-    } catch (error) {
-      console.error(error);
+    } catch {
       setError("Connection failed");
       setLoading(false);
     }
   };
 
-  const hasResult = Boolean(
-    preview ||
-    videoPreview ||
-    result
-  );
+  const hasResult = Boolean(preview || videoBlob || result);
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto px-6 py-10 space-y-10">
 
-        {/* TITLE */}
+        {/* Title */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold">
-            {getBoth(
-              e.title,
-              s.title
-            )}
+            {getBoth(e.title, s.title)}
           </h1>
 
           <p className="text-gray-500 max-w-xl mx-auto">
-            {getBoth(
-              e.subtitle,
-              s.subtitle
-            )}
-
+            {getBoth(e.subtitle, s.subtitle)}
             <span className="text-green-700 font-medium">
-              {" "}
-              {getBoth(
-                e.liveResults,
-                s.liveResults
-              )}
+              {" "}{getBoth(e.liveResults, s.liveResults)}
             </span>
           </p>
 
-          {/* MODE SWITCH */}
+          {/* Tab switcher */}
           <div className="flex justify-center gap-4 pt-1">
-            <button
-              onClick={() => {
-                setMode("image");
-                resetState();
-              }}
-              className={`px-5 py-2 rounded-xl ${
-                mode === "image"
-                  ? "bg-primary/90 text-white"
-                  : "bg-gray-200"
-              }`}
-            >
-              {getBoth(
-                e.tabImage,
-                s.tabImage
-              )}
-            </button>
-
-            <button
-              onClick={() => {
-                setMode("video");
-                resetState();
-              }}
-              className={`px-5 py-2 rounded-xl ${
-                mode === "video"
-                  ? "bg-primary/90 text-white"
-                  : "bg-gray-200"
-              }`}
-            >
-              {getBoth(
-                e.tabVideo,
-                s.tabVideo
-              )}
-            </button>
+            {(["image", "video"] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => switchTab(tab)}
+                className={`px-5 py-2 rounded-xl ${
+                  mode === tab ? "bg-primary/90 text-white" : "bg-gray-200"
+                }`}
+              >
+                {tab === "image"
+                  ? getBoth(e.tabImage, s.tabImage)
+                  : getBoth(e.tabVideo, s.tabVideo)}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* UPLOAD + RESULT WRAPPER — single relative container so overlay covers image too */}
+        {/* Upload + result */}
         <div className="relative space-y-10">
 
-          {/* BLUR OVERLAY — covers both upload section and result image */}
+          {/* Loading overlay */}
           <AnimatePresence>
             {loading && (
               <motion.div
@@ -253,22 +257,17 @@ export default function Upload() {
               >
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-12 h-12 border-4 border-gray-300 border-t-green-700 rounded-full animate-spin" />
-                  <p>
-                    {getBoth(
-                      e.analyzing,
-                      s.analyzing
-                    )}
-                  </p>
+                  <p>{getBoth(e.analyzing, s.analyzing)}</p>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* UPLOAD SECTION */}
+          {/* Upload dropzone */}
           <UploadMediaSection
             mode={mode}
             preview={preview}
-            videoPreview={videoPreview}
+            videoPreview={videoBlob}
             result={result}
             isDragging={isDragging}
             fileInputRef={fileInputRef}
@@ -279,24 +278,24 @@ export default function Upload() {
             s={s}
           />
 
-          {/* RESULT SECTION */}
+          {/* Result row */}
           {hasResult && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-start">
 
-              {/* LEFT — image/video preview */}
+              {/* Left — media preview */}
               <div className="flex justify-center">
-                {videoPreview ? (
+                {videoBlob ? (
+                  // Live video — attach ref so we can snapshot on leave
                   <video
+                    ref={videoElRef}
                     controls
                     preload="auto"
                     className="rounded-3xl max-h-[500px]"
                   >
-                    <source
-                      src={videoPreview}
-                      type="video/mp4"
-                    />
+                    <source src={videoBlob} type="video/mp4" />
                   </video>
                 ) : preview ? (
+                  // Image (bounding-box) OR video snapshot
                   <img
                     src={preview}
                     alt="Bird Preview"
@@ -305,11 +304,11 @@ export default function Upload() {
                 ) : null}
               </div>
 
-              {/* RIGHT — bird details */}
+              {/* Right — bird details */}
               <BirdDetailsCard
                 result={result}
                 error={error}
-                videoPreview={videoPreview}
+                videoPreview={videoBlob}
                 resetState={resetState}
               />
             </div>
