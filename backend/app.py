@@ -12,6 +12,9 @@ from video_processor import predict_video
 # performance
 from performance import get_system_performance
 
+# config
+from config import species_info
+
 # database
 from database import (
     init_db,
@@ -77,6 +80,13 @@ def latest_detection(source_type):
     if not data:
         return jsonify(None), 204
 
+    # Re-map Sinhala habitat & diet from species_info using english_name
+    raw_key = data["english_name"].lower().replace(" ", "_")
+    details = species_info.get(raw_key, {})
+
+    data["habitat_si"] = details.get("habitat_si", "")
+    data["diet_si"]    = details.get("diet_si", "")
+
     return jsonify(data)
 
 
@@ -107,7 +117,7 @@ def save_video_snapshot():
         with open(saved_path, "wb") as f:
             f.write(image_bytes)
 
-        # Save relative URL so it works through the proxy
+        # Relative URL so it works through the Vite proxy
         image_url = f"/saved_images/{filename}"
 
         # Update the latest video detection's image_url in DB

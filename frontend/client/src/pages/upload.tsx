@@ -51,20 +51,15 @@ function captureVideoFrame(videoEl: HTMLVideoElement): string | null {
 
 // ─── Send snapshot to backend to persist after refresh ────────────────────────
 
-async function saveSnapshotToBackend(snapshot: string): Promise<string | null> {
+async function saveSnapshotToBackend(snapshot: string): Promise<void> {
   try {
-    const res = await fetch("/api/save-video-snapshot", {
+    await fetch("/api/save-video-snapshot", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ snapshot }),
     });
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    return data.image_url || null;
   } catch {
-    return null;
+    console.error("Failed to save video snapshot to backend");
   }
 }
 
@@ -88,9 +83,9 @@ export default function Upload() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoElRef   = useRef<HTMLVideoElement>(null);
-  const modeRef      = useRef(mode); // ref so cleanup effects always read latest mode
+  const modeRef      = useRef(mode);
 
-  // Keep modeRef in sync
+  // Keep modeRef in sync with mode
   useEffect(() => { modeRef.current = mode; }, [mode]);
 
   // ── Restore last detections from DB on fresh page load ──────────────────────
@@ -107,17 +102,16 @@ export default function Upload() {
           englishName: data.english_name,
           sinhalaName: data.sinhala_name,
           confidence:  data.confidence,
-          habitat_en:  data.habitat || "",
-          habitat_si:  "",
-          diet_en:     data.diet    || "",
-          diet_si:     "",
+          habitat_en:  data.habitat    || "",
+          habitat_si:  data.habitat_si || "",  // re-mapped from species_info on backend
+          diet_en:     data.diet       || "",
+          diet_si:     data.diet_si    || "",  // re-mapped from species_info on backend
         };
 
         if (type === "image") {
           store.image.preview = data.image_url || null;
           store.image.result  = result;
         } else {
-          // Snapshot saved by backend on last leave — restore it if present
           store.video.preview = data.image_url || null;
           store.video.result  = result;
         }
@@ -146,7 +140,6 @@ export default function Upload() {
         if (snapshot) {
           store.video.preview   = snapshot;
           store.video.videoBlob = null;
-          // Fire-and-forget: save snapshot to backend so it survives refresh
           saveSnapshotToBackend(snapshot);
         }
       }
@@ -154,7 +147,7 @@ export default function Upload() {
   }, []);
 
   // ── Switch between Image / Video tabs ────────────────────────────────────────
-  const switchTab = async (next: "image" | "video") => {
+  const switchTab = (next: "image" | "video") => {
     if (next === mode) return;
 
     // Snapshot video before leaving video tab
@@ -163,7 +156,6 @@ export default function Upload() {
       if (snapshot) {
         store.video.preview   = snapshot;
         store.video.videoBlob = null;
-        // Save snapshot to backend so it survives refresh
         saveSnapshotToBackend(snapshot);
       }
     }
@@ -231,11 +223,22 @@ export default function Upload() {
           const url   = URL.createObjectURL(blob);
           setVideoBlob(url);
           store.video.videoBlob = url;
+
+          // Capture snapshot after video loads and save to backend immediately
+          setTimeout(() => {
+            if (videoElRef.current) {
+              const snapshot = captureVideoFrame(videoElRef.current);
+              if (snapshot) {
+                store.video.preview = snapshot;
+                saveSnapshotToBackend(snapshot);
+              }
+            }
+          }, 1500);
         }
 
         const r = applyResult(data, Math.round((data.confidence || 0) * 100));
         store.video.result  = r;
-        store.video.preview = null; // snapshot taken on leave
+        store.video.preview = null;
         setLoading(false);
         return;
       }
