@@ -27,6 +27,14 @@ def update_accuracy(confidence):
     last_model_accuracy = f"{accuracy}%"
 
 
+def format_response_time(seconds):
+    if seconds >= 60:
+        minutes = seconds / 60
+        return f"{minutes:.2f} min"
+    else:
+        return f"{seconds:.2f} sec"
+
+
 def get_system_performance():
     cpu_usage = psutil.cpu_percent(interval=1)
     memory_usage = psutil.virtual_memory().percent
@@ -42,7 +50,7 @@ def get_system_performance():
         "modelAccuracy": last_model_accuracy,
         "inferenceSpeed": last_inference_speed,
         "cpuUsage": f"{cpu_usage}%",
-        "responseTime": f"{last_response_time:.2f}s",
+        "responseTime": format_response_time(last_response_time),
         "powerEfficiency": POWER_EFFICIENCY,
         "systemStability": stability,
         "memoryUsage": f"{memory_usage}%"
