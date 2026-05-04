@@ -23,21 +23,20 @@ type Result = {
 };
 
 type TabState = {
-  preview: string | null;       // bounding-box image (both tabs use this)
-  result: Result | null;
-  videoBlob: string | null;     // live video URL — only kept while on video tab
+  preview:   string | null;   // bounding-box image (image tab) or snapshot (video tab)
+  result:    Result | null;
+  videoBlob: string | null;   // live video URL — only while on video tab
 };
 
-// ─── Persistent store (survives navigation) ───────────────────────────────────
+// ─── Persistent in-memory store (survives sidebar navigation) ─────────────────
 
 const store: { image: TabState; video: TabState } = {
   image: { preview: null, result: null, videoBlob: null },
   video: { preview: null, result: null, videoBlob: null },
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Capture a frame from a <video> element as a JPEG data-URL ────────────────
 
-/** Capture a single frame from a <video> element and return a base64 data-URL */
 function captureVideoFrame(videoEl: HTMLVideoElement): string | null {
   try {
     const canvas = document.createElement("canvas");
@@ -45,6 +44,25 @@ function captureVideoFrame(videoEl: HTMLVideoElement): string | null {
     canvas.height = videoEl.videoHeight;
     canvas.getContext("2d")?.drawImage(videoEl, 0, 0);
     return canvas.toDataURL("image/jpeg", 0.85);
+  } catch {
+    return null;
+  }
+}
+
+// ─── Send snapshot to backend to persist after refresh ────────────────────────
+
+async function saveSnapshotToBackend(snapshot: string): Promise<string | null> {
+  try {
+    const res = await fetch("/api/save-video-snapshot", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ snapshot }),
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return data.image_url || null;
   } catch {
     return null;
   }
@@ -60,43 +78,93 @@ export default function Upload() {
   const getBoth = (eVal: string, sVal: string) =>
     language === "both" ? `${eVal} / ${sVal}` : language === "sinhala" ? sVal : eVal;
 
-  // Active tab
-  const [mode, setMode] = useState<"image" | "video">("image");
-
-  // UI state — always initialised from the store for the current tab
-  const [preview,      setPreview]      = useState<string | null>(store.image.preview);
-  const [videoBlob,    setVideoBlob]    = useState<string | null>(store.video.videoBlob);
-  const [result,       setResult]       = useState<Result | null>(store.image.result);
-  const [error,        setError]        = useState<string | null>(null);
-  const [loading,      setLoading]      = useState(false);
-  const [isDragging,   setIsDragging]   = useState(false);
+  const [mode,       setMode]       = useState<"image" | "video">("image");
+  const [preview,    setPreview]    = useState<string | null>(store.image.preview);
+  const [videoBlob,  setVideoBlob]  = useState<string | null>(store.video.videoBlob);
+  const [result,     setResult]     = useState<Result | null>(store.image.result);
+  const [error,      setError]      = useState<string | null>(null);
+  const [loading,    setLoading]    = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const videoElRef   = useRef<HTMLVideoElement>(null);   // ref to the rendered <video>
+  const videoElRef   = useRef<HTMLVideoElement>(null);
+  const modeRef      = useRef(mode); // ref so cleanup effects always read latest mode
 
-  // ── Snapshot the video frame before the component unmounts ──────────────────
+  // Keep modeRef in sync
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+
+  // ── Restore last detections from DB on fresh page load ──────────────────────
+  useEffect(() => {
+    const fetchLatest = async (type: "image" | "video") => {
+      try {
+        const res = await fetch(`/api/latest-detection/${type}`);
+        if (!res.ok || res.status === 204) return;
+
+        const data = await res.json();
+        if (!data) return;
+
+        const result: Result = {
+          englishName: data.english_name,
+          sinhalaName: data.sinhala_name,
+          confidence:  data.confidence,
+          habitat_en:  data.habitat || "",
+          habitat_si:  "",
+          diet_en:     data.diet    || "",
+          diet_si:     "",
+        };
+
+        if (type === "image") {
+          store.image.preview = data.image_url || null;
+          store.image.result  = result;
+        } else {
+          // Snapshot saved by backend on last leave — restore it if present
+          store.video.preview = data.image_url || null;
+          store.video.result  = result;
+        }
+      } catch (err) {
+        console.error(`Failed to restore ${type} detection:`, err);
+      }
+    };
+
+    const restoreAll = async () => {
+      if (!store.image.result) await fetchLatest("image");
+      if (!store.video.result) await fetchLatest("video");
+
+      // Load image tab into state (default tab on mount)
+      setPreview(store.image.preview);
+      setResult(store.image.result);
+    };
+
+    restoreAll();
+  }, []);
+
+  // ── Snapshot + save to backend when component unmounts (sidebar navigation) ──
   useEffect(() => {
     return () => {
-      if (mode === "video" && videoElRef.current) {
+      if (modeRef.current === "video" && videoElRef.current) {
         const snapshot = captureVideoFrame(videoElRef.current);
         if (snapshot) {
-          store.video.preview  = snapshot;
-          store.video.videoBlob = null;   // don't keep the heavy blob URL
+          store.video.preview   = snapshot;
+          store.video.videoBlob = null;
+          // Fire-and-forget: save snapshot to backend so it survives refresh
+          saveSnapshotToBackend(snapshot);
         }
       }
     };
-  }, [mode]);
+  }, []);
 
-  // ── Switch tab ───────────────────────────────────────────────────────────────
-  const switchTab = (next: "image" | "video") => {
+  // ── Switch between Image / Video tabs ────────────────────────────────────────
+  const switchTab = async (next: "image" | "video") => {
     if (next === mode) return;
 
-    // Before leaving the video tab, snapshot the current frame
+    // Snapshot video before leaving video tab
     if (mode === "video" && videoElRef.current) {
       const snapshot = captureVideoFrame(videoElRef.current);
       if (snapshot) {
         store.video.preview   = snapshot;
         store.video.videoBlob = null;
+        // Save snapshot to backend so it survives refresh
+        saveSnapshotToBackend(snapshot);
       }
     }
 
@@ -108,19 +176,19 @@ export default function Upload() {
       setVideoBlob(null);
       setResult(store.image.result);
     } else {
-      // Show snapshot (if any) — live video only exists if user just ran detection
       setPreview(store.video.preview);
       setVideoBlob(store.video.videoBlob);
       setResult(store.video.result);
     }
   };
 
-  // ── Reset ────────────────────────────────────────────────────────────────────
+  // ── Reset current tab ────────────────────────────────────────────────────────
   const resetState = () => {
     setPreview(null);
     setVideoBlob(null);
     setResult(null);
     setError(null);
+
     if (mode === "image") {
       store.image = { preview: null, result: null, videoBlob: null };
     } else {
@@ -128,8 +196,8 @@ export default function Upload() {
     }
   };
 
-  // ── Build result object ──────────────────────────────────────────────────────
-  const applyResult = (data: any, confidence: number) => {
+  // ── Build and apply result object ────────────────────────────────────────────
+  const applyResult = (data: any, confidence: number): Result => {
     const r: Result = {
       englishName: data.englishName || "",
       sinhalaName: data.sinhalaName || "",
@@ -155,10 +223,8 @@ export default function Upload() {
         setMode("video");
 
         const data = await predictVideo(file);
-
         if (data.error) { setError(data.error); setLoading(false); return; }
 
-        // Decode returned annotated video
         if (data.video) {
           const bytes = Uint8Array.from(atob(data.video), c => c.charCodeAt(0));
           const blob  = new Blob([bytes], { type: "video/mp4" });
@@ -167,9 +233,9 @@ export default function Upload() {
           store.video.videoBlob = url;
         }
 
-        const r  = applyResult(data, Math.round((data.confidence || 0) * 100));
+        const r = applyResult(data, Math.round((data.confidence || 0) * 100));
         store.video.result  = r;
-        store.video.preview = null;   // snapshot is taken on leave, not now
+        store.video.preview = null; // snapshot taken on leave
         setLoading(false);
         return;
       }
@@ -182,15 +248,17 @@ export default function Upload() {
       setPreview(immediateUrl);
 
       const data = await predictImage(file);
-
       if (data.error) { setError(data.error); setLoading(false); return; }
 
       let conf = Math.round((data.confidence || 0) * 100);
       if (conf >= 100) conf = 99;
 
       setTimeout(() => {
-        // Replace with bounding-box version returned by API
-        const bbUrl = data.image ? `data:image/jpeg;base64,${data.image}` : immediateUrl;
+        // Replace with bounding-box version from API
+        const bbUrl = data.image
+          ? `data:image/jpeg;base64,${data.image}`
+          : immediateUrl;
+
         setPreview(bbUrl);
         store.image.preview = bbUrl;
 
@@ -285,7 +353,7 @@ export default function Upload() {
               {/* Left — media preview */}
               <div className="flex justify-center">
                 {videoBlob ? (
-                  // Live video — attach ref so we can snapshot on leave
+                  // Live video — ref attached so we can snapshot on leave
                   <video
                     ref={videoElRef}
                     controls
@@ -295,7 +363,7 @@ export default function Upload() {
                     <source src={videoBlob} type="video/mp4" />
                   </video>
                 ) : preview ? (
-                  // Image (bounding-box) OR video snapshot
+                  // Bounding-box image OR video snapshot
                   <img
                     src={preview}
                     alt="Bird Preview"
