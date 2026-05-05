@@ -15,17 +15,17 @@ type LangMode = "english" | "sinhala" | "both";
 type Result = {
   englishName: string;
   sinhalaName: string;
-  confidence: number;
-  habitat_en: string;
-  habitat_si: string;
-  diet_en: string;
-  diet_si: string;
+  confidence:  number;
+  habitat_en:  string;
+  habitat_si:  string;
+  diet_en:     string;
+  diet_si:     string;
 };
 
 type TabState = {
-  preview:   string | null;   // bounding-box image (image tab) or snapshot (video tab)
+  preview:   string | null;  // bounding-box image for image tab
   result:    Result | null;
-  videoBlob: string | null;   // live video URL — only while on video tab
+  videoBlob: string | null;  // live blob URL or restored /saved_videos/ URL
 };
 
 // ─── Persistent in-memory store (survives sidebar navigation) ─────────────────
@@ -34,34 +34,6 @@ const store: { image: TabState; video: TabState } = {
   image: { preview: null, result: null, videoBlob: null },
   video: { preview: null, result: null, videoBlob: null },
 };
-
-// ─── Capture a frame from a <video> element as a JPEG data-URL ────────────────
-
-function captureVideoFrame(videoEl: HTMLVideoElement): string | null {
-  try {
-    const canvas = document.createElement("canvas");
-    canvas.width  = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
-    canvas.getContext("2d")?.drawImage(videoEl, 0, 0);
-    return canvas.toDataURL("image/jpeg", 0.85);
-  } catch {
-    return null;
-  }
-}
-
-// ─── Send snapshot to backend to persist after refresh ────────────────────────
-
-async function saveSnapshotToBackend(snapshot: string): Promise<void> {
-  try {
-    await fetch("/api/save-video-snapshot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ snapshot }),
-    });
-  } catch {
-    console.error("Failed to save video snapshot to backend");
-  }
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -75,7 +47,7 @@ export default function Upload() {
 
   const [mode,       setMode]       = useState<"image" | "video">("image");
   const [preview,    setPreview]    = useState<string | null>(store.image.preview);
-  const [videoBlob,  setVideoBlob]  = useState<string | null>(store.video.videoBlob);
+  const [videoBlob,  setVideoBlob]  = useState<string | null>(null);
   const [result,     setResult]     = useState<Result | null>(store.image.result);
   const [error,      setError]      = useState<string | null>(null);
   const [loading,    setLoading]    = useState(false);
@@ -83,10 +55,6 @@ export default function Upload() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoElRef   = useRef<HTMLVideoElement>(null);
-  const modeRef      = useRef(mode);
-
-  // Keep modeRef in sync with mode
-  useEffect(() => { modeRef.current = mode; }, [mode]);
 
   // ── Restore last detections from DB on fresh page load ──────────────────────
   useEffect(() => {
@@ -103,17 +71,19 @@ export default function Upload() {
           sinhalaName: data.sinhala_name,
           confidence:  data.confidence,
           habitat_en:  data.habitat    || "",
-          habitat_si:  data.habitat_si || "",  // re-mapped from species_info on backend
+          habitat_si:  data.habitat_si || "",
           diet_en:     data.diet       || "",
-          diet_si:     data.diet_si    || "",  // re-mapped from species_info on backend
+          diet_si:     data.diet_si    || "",
         };
 
         if (type === "image") {
           store.image.preview = data.image_url || null;
           store.image.result  = result;
         } else {
-          store.video.preview = data.image_url || null;
-          store.video.result  = result;
+          // Restore saved video URL — fully playable after refresh
+          store.video.videoBlob = data.video_url || null;
+          store.video.preview   = null;
+          store.video.result    = result;
         }
       } catch (err) {
         console.error(`Failed to restore ${type} detection:`, err);
@@ -124,40 +94,22 @@ export default function Upload() {
       if (!store.image.result) await fetchLatest("image");
       if (!store.video.result) await fetchLatest("video");
 
-      // Load image tab into state (default tab on mount)
+      // Load image tab state only — never let video bleed into default tab
       setPreview(store.image.preview);
+      setVideoBlob(null);
       setResult(store.image.result);
     };
 
     restoreAll();
   }, []);
 
-  // ── Snapshot + save to backend when component unmounts (sidebar navigation) ──
-  useEffect(() => {
-    return () => {
-      if (modeRef.current === "video" && videoElRef.current) {
-        const snapshot = captureVideoFrame(videoElRef.current);
-        if (snapshot) {
-          store.video.preview   = snapshot;
-          store.video.videoBlob = null;
-          saveSnapshotToBackend(snapshot);
-        }
-      }
-    };
-  }, []);
-
   // ── Switch between Image / Video tabs ────────────────────────────────────────
   const switchTab = (next: "image" | "video") => {
     if (next === mode) return;
 
-    // Snapshot video before leaving video tab
-    if (mode === "video" && videoElRef.current) {
-      const snapshot = captureVideoFrame(videoElRef.current);
-      if (snapshot) {
-        store.video.preview   = snapshot;
-        store.video.videoBlob = null;
-        saveSnapshotToBackend(snapshot);
-      }
+    // Keep current video URL in store before leaving
+    if (mode === "video") {
+      store.video.videoBlob = videoBlob;
     }
 
     setMode(next);
@@ -223,17 +175,6 @@ export default function Upload() {
           const url   = URL.createObjectURL(blob);
           setVideoBlob(url);
           store.video.videoBlob = url;
-
-          // Capture snapshot after video loads and save to backend immediately
-          setTimeout(() => {
-            if (videoElRef.current) {
-              const snapshot = captureVideoFrame(videoElRef.current);
-              if (snapshot) {
-                store.video.preview = snapshot;
-                saveSnapshotToBackend(snapshot);
-              }
-            }
-          }, 1500);
         }
 
         const r = applyResult(data, Math.round((data.confidence || 0) * 100));
@@ -356,7 +297,6 @@ export default function Upload() {
               {/* Left — media preview */}
               <div className="flex justify-center">
                 {videoBlob ? (
-                  // Live video — ref attached so we can snapshot on leave
                   <video
                     ref={videoElRef}
                     controls
@@ -366,7 +306,6 @@ export default function Upload() {
                     <source src={videoBlob} type="video/mp4" />
                   </video>
                 ) : preview ? (
-                  // Bounding-box image OR video snapshot
                   <img
                     src={preview}
                     alt="Bird Preview"

@@ -27,7 +27,4 @@ backend/birdvision.db
 
 # Saved detection outputs
 backend/saved_images/
-backend/*.jpg
-backend/*.jpeg
-backend/*.png
-backend/*.mp4
+backend/saved_videos/
