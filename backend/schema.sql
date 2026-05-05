@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS detections (
     habitat TEXT,
     diet TEXT,
     image_url TEXT,
+    video_url TEXT,
     source_type TEXT,
     created_at TEXT
 );

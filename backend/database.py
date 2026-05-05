@@ -25,6 +25,15 @@ def init_db():
         schema_sql = f.read()
 
     cursor.executescript(schema_sql)
+
+    # Add video_url column if it doesn't exist (for existing DBs)
+    try:
+        cursor.execute("ALTER TABLE detections ADD COLUMN video_url TEXT DEFAULT ''")
+        conn.commit()
+        print("Added video_url column to detections table")
+    except Exception:
+        pass  # Column already exists
+
     conn.commit()
     conn.close()
 
@@ -36,6 +45,7 @@ def save_detection(
     habitat,
     diet,
     image_url="",
+    video_url="",
     source_type="image",
 ):
     conn = get_connection()
@@ -50,10 +60,11 @@ def save_detection(
             habitat,
             diet,
             image_url,
+            video_url,
             source_type,
             created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             english_name,
@@ -62,6 +73,7 @@ def save_detection(
             habitat,
             diet,
             image_url,
+            video_url,
             source_type,
             datetime.now().isoformat()
         )
@@ -73,7 +85,7 @@ def save_detection(
 
 
 def update_detection_image_url(source_type, image_url):
-    """Update the image_url of the latest detection for a given source_type."""
+    """Update image_url of the latest detection for a given source_type."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -160,6 +172,7 @@ def get_recent_detections(limit=5):
             habitat,
             diet,
             image_url,
+            video_url,
             source_type,
             created_at
         FROM detections
@@ -187,6 +200,7 @@ def get_latest_detection_by_type(source_type):
             habitat,
             diet,
             image_url,
+            video_url,
             source_type
         FROM detections
         WHERE source_type = ?

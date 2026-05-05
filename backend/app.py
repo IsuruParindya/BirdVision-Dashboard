@@ -49,6 +49,14 @@ def serve_saved_image(filename):
     return send_from_directory(folder, filename)
 
 
+# ─── Serve Saved Videos ───────────────────────────────────────────────────────
+
+@app.route("/saved_videos/<path:filename>")
+def serve_saved_video(filename):
+    folder = os.path.join(os.path.dirname(__file__), "saved_videos")
+    return send_from_directory(folder, filename)
+
+
 # ─── System Performance ───────────────────────────────────────────────────────
 
 @app.route("/system-performance", methods=["GET"])
@@ -90,7 +98,7 @@ def latest_detection(source_type):
     return jsonify(data)
 
 
-# ─── Save Video Snapshot ──────────────────────────────────────────────────────
+# ─── Save Video Snapshot (fallback for sidebar nav) ───────────────────────────
 
 @app.route("/save-video-snapshot", methods=["POST"])
 def save_video_snapshot():
@@ -101,11 +109,9 @@ def save_video_snapshot():
         if not snapshot_b64:
             return jsonify({"error": "No snapshot provided"}), 400
 
-        # Strip data:image/jpeg;base64, prefix if present
         if "," in snapshot_b64:
             snapshot_b64 = snapshot_b64.split(",", 1)[1]
 
-        # Decode and save to saved_images/
         image_bytes = base64.b64decode(snapshot_b64)
 
         save_folder = os.path.join(os.path.dirname(__file__), "saved_images")
@@ -117,10 +123,7 @@ def save_video_snapshot():
         with open(saved_path, "wb") as f:
             f.write(image_bytes)
 
-        # Relative URL so it works through the Vite proxy
         image_url = f"/saved_images/{filename}"
-
-        # Update the latest video detection's image_url in DB
         update_detection_image_url("video", image_url)
 
         print(f"Video snapshot saved: {filename}")
