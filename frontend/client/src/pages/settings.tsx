@@ -37,8 +37,12 @@ export default function Settings() {
 
   const handleLanguageChange = (lang: LangMode) => {
     setLanguage(lang);
-    const selectedLabel = options.find((o) => o.id === lang)?.label;
-    setNotification(`${getBoth(e.notification, s.notification)} "${selectedLabel}"`);
+    const selectedLabel = lang === "sinhala"
+      ? s.options.sinhala.label
+      : e.options.english.label;
+    // Use the new language directly instead of getBoth (which reads old state)
+    const notificationText = lang === "sinhala" ? s.notification : e.notification;
+    setNotification(`${notificationText} "${selectedLabel}"`);
     setVisible(true);
     setTimeout(() => setVisible(false), 2500);
   };

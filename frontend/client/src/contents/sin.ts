@@ -188,7 +188,7 @@ export default {
       },
 
       sinhala: {
-        label: "Sinhala Only (සිංහල)",
+        label: "(සිංහල)",
         desc:
           "සියලු UI සහ ප්‍රතිඵල සිංහලෙන් පෙන්වන්න.",
       },
