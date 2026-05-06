@@ -1,4 +1,3 @@
-// Simple in-memory store to persist results across navigation
 type DetectionResult = {
   mode: "image" | "video";
   preview: string | null;

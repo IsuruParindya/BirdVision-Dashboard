@@ -8,8 +8,6 @@ import { useLanguage } from "@/pages/LanguageContext";
 import en from "@/contents/en";
 import sin from "@/contents/sin";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type LangMode = "english" | "sinhala" | "both";
 
 type Result = {
@@ -23,9 +21,9 @@ type Result = {
 };
 
 type TabState = {
-  preview:   string | null;  // bounding-box image for image tab
+  preview:   string | null;
   result:    Result | null;
-  videoBlob: string | null;  // live blob URL or restored /saved_videos/ URL
+  videoBlob: string | null;
 };
 
 // ─── Persistent in-memory store (survives sidebar navigation) ─────────────────
@@ -80,7 +78,6 @@ export default function Upload() {
           store.image.preview = data.image_url || null;
           store.image.result  = result;
         } else {
-          // Restore saved video URL — fully playable after refresh
           store.video.videoBlob = data.video_url || null;
           store.video.preview   = null;
           store.video.result    = result;
@@ -94,7 +91,6 @@ export default function Upload() {
       if (!store.image.result) await fetchLatest("image");
       if (!store.video.result) await fetchLatest("video");
 
-      // Load image tab state only — never let video bleed into default tab
       setPreview(store.image.preview);
       setVideoBlob(null);
       setResult(store.image.result);
@@ -107,7 +103,6 @@ export default function Upload() {
   const switchTab = (next: "image" | "video") => {
     if (next === mode) return;
 
-    // Keep current video URL in store before leaving
     if (mode === "video") {
       store.video.videoBlob = videoBlob;
     }
@@ -187,7 +182,6 @@ export default function Upload() {
       /* ── IMAGE ── */
       setMode("image");
 
-      // Show original immediately while API processes
       const immediateUrl = URL.createObjectURL(file);
       setPreview(immediateUrl);
 
