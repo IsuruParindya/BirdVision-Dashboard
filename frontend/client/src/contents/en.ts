@@ -82,7 +82,7 @@ export default {
 
     // Best time card
     bestTimeTitle: "Best Time",
-    bestTimeDesc: "Early morning (6–9 AM) is ideal for spotting active bird species.",
+    bestTimeDesc: "Early morning (6–9 AM) is the best time for spotting active bird species, as birds are usually more visible and active during this period.",
   },
 
   upload: {
