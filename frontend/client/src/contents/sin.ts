@@ -73,12 +73,16 @@ export default {
     statusDetecting: "සජීවීව විශේෂ හඳුනාගනිමින්",
     statusStandby: "රැකවරණය",
 
-    tip1: "කුරුල්ලා පැහැදිලිව කැමරාවට ගන්න",
-    tip2: "හොඳ ආලෝකය සහතික කරන්න",
+    tip1: "කුරුල්ලා පෙන්වන්න",
+    tip2: "හොඳ ආලෝකය තබන්න",
     tip3: "කැමරාව ස්ථාවරව තබන්න",
 
     // Top label
     realTimeRecognition: "සජීවී හඳුනාගැනීම",
+
+    // Best time card
+    bestTimeTitle: "හොඳම වේලාව",
+    bestTimeDesc: "පාන්දර (6–9 AM) කුරුළු නිරීක්ෂණයට හොඳම වේලාවයි."
   },
 
   upload: {

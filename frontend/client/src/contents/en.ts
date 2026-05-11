@@ -73,12 +73,16 @@ export default {
     statusDetecting: "Detecting species in real-time",
     statusStandby: "Standby",
 
-    tip1: "Point camera at the bird clearly",
-    tip2: "Ensure good lighting",
-    tip3: "Keep camera steady",
+    tip1: "Point camera at bird clearly.",
+    tip2: "Ensure good lighting.",
+    tip3: "Keep camera steady.",
 
     // Top label
     realTimeRecognition: "Real-Time Recognition",
+
+    // Best time card
+    bestTimeTitle: "Best Time",
+    bestTimeDesc: "Early morning (6–9 AM) is ideal for spotting active bird species.",
   },
 
   upload: {

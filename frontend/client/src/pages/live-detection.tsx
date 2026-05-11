@@ -62,7 +62,7 @@ export default function LiveDetection() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col h-[calc(100vh-6rem)] gap-0">
+      <div className="flex flex-col h-full gap-0 pb-1">
 
         {/* ── Top bar ── */}
         <div className="flex items-center justify-between mb-5">
@@ -106,7 +106,7 @@ export default function LiveDetection() {
         </div>
 
         {/* ── Main layout: feed + side panel ── */}
-        <div className="flex flex-1 gap-4 min-h-0">
+        <div className="flex gap-4 min-h-0 flex-1">
 
           {/* Feed */}
           <div className="relative flex-1 rounded-3xl overflow-hidden bg-gray-950 shadow-2xl">
@@ -188,7 +188,7 @@ export default function LiveDetection() {
           </div>
 
           {/* ── Side panel ── */}
-          <div className="w-56 flex flex-col gap-3 shrink-0 self-start">
+          <div className="w-56 flex flex-col gap-3 shrink-0 min-h-0">
 
             {/* Status card */}
             <div
@@ -257,6 +257,16 @@ export default function LiveDetection() {
                   </li>
                 ))}
               </ul>
+            </div>
+
+            {/* Best time card */}
+            <div className="rounded-2xl p-4 bg-gray-50 border border-gray-200 flex-1">
+              <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">
+                {getBoth(e.bestTimeTitle, s.bestTimeTitle)}
+              </p>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                {getBoth(e.bestTimeDesc, s.bestTimeDesc)}
+              </p>
             </div>
 
           </div>
