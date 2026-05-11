@@ -36,10 +36,13 @@ export default function LiveDetection() {
   const toggleScan = async () => {
     if (isScanning) {
       try {
-        await fetch(`${API_BASE}/stop-live-feed`, { method: "POST" });
+        await fetch(`${API_BASE}/stop-live-feed`, {
+          method: "POST",
+        });
       } catch (error) {
         console.error("Failed to stop camera:", error);
       }
+
       setIsScanning(false);
       setStreamKey((prev) => prev + 1);
     } else {
@@ -52,7 +55,9 @@ export default function LiveDetection() {
 
     if (isScanning) {
       try {
-        await fetch(`${API_BASE}/stop-live-feed`, { method: "POST" });
+        await fetch(`${API_BASE}/stop-live-feed`, {
+          method: "POST",
+        });
       } catch (error) {
         console.error("Failed stopping old camera:", error);
       }
@@ -66,7 +71,7 @@ export default function LiveDetection() {
     <AppLayout>
       <div className="flex flex-col h-full gap-0 pb-1">
 
-        {/* ── Top bar ── */}
+        {/* Top Bar */}
         <div className="flex items-center justify-between mb-5">
           <div>
             <p className="text-xs font-semibold tracking-[0.2em] uppercase text-primary/60 mb-1">
@@ -82,7 +87,7 @@ export default function LiveDetection() {
             </p>
           </div>
 
-          {/* Camera selector */}
+          {/* Camera Switch */}
           <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-2xl border border-gray-200">
             <button
               onClick={() => switchCamera(0)}
@@ -110,10 +115,10 @@ export default function LiveDetection() {
           </div>
         </div>
 
-        {/* ── Main layout ── */}
+        {/* Main Layout */}
         <div className="flex gap-4 min-h-0 flex-1">
 
-          {/* Feed */}
+          {/* Live Feed */}
           <div className="relative flex-1 aspect-video rounded-3xl overflow-hidden bg-gray-950 shadow-2xl">
 
             {isScanning ? (
@@ -144,17 +149,21 @@ export default function LiveDetection() {
               </div>
             )}
 
-            {/* Live badge */}
+            {/* Live Badge */}
             <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
               <Radio
                 className={`w-3.5 h-3.5 ${
-                  isScanning ? "text-emerald-400" : "text-white/30"
+                  isScanning
+                    ? "text-emerald-400"
+                    : "text-white/30"
                 }`}
               />
 
               <span
                 className={`text-xs font-semibold tracking-wide ${
-                  isScanning ? "text-emerald-300" : "text-white/30"
+                  isScanning
+                    ? "text-emerald-300"
+                    : "text-white/30"
                 }`}
               >
                 {isScanning
@@ -172,7 +181,7 @@ export default function LiveDetection() {
               <Maximize className="w-4 h-4" />
             </button>
 
-            {/* Bottom control */}
+            {/* Bottom Button */}
             <div className="absolute bottom-0 inset-x-0 flex items-center justify-center p-5 bg-gradient-to-t from-black/60 via-black/20 to-transparent">
               <button
                 onClick={toggleScan}
@@ -197,8 +206,8 @@ export default function LiveDetection() {
             </div>
           </div>
 
-          {/* Side Panel */}
-          <div className="w-56 flex flex-col gap-3 shrink-0 min-h-0">
+          {/* Right Side Panel */}
+          <div className="w-[230px] flex flex-col justify-between shrink-0 h-full">
 
             {/* Status */}
             <div
@@ -215,13 +224,17 @@ export default function LiveDetection() {
               <div className="flex items-center gap-2">
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    isScanning ? "bg-emerald-500 animate-pulse" : "bg-gray-300"
+                    isScanning
+                      ? "bg-emerald-500 animate-pulse"
+                      : "bg-gray-300"
                   }`}
                 />
 
                 <span
                   className={`text-sm font-bold ${
-                    isScanning ? "text-emerald-700" : "text-gray-400"
+                    isScanning
+                      ? "text-emerald-700"
+                      : "text-gray-400"
                   }`}
                 >
                   {isScanning
@@ -277,7 +290,7 @@ export default function LiveDetection() {
             </div>
 
             {/* Best Time */}
-            <div className="rounded-2xl p-4 bg-gray-50 border border-gray-200 flex-1">
+            <div className="rounded-2xl p-4 bg-gray-50 border border-gray-200 h-[160px] flex flex-col justify-center">
               <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">
                 {getBoth(e.bestTimeTitle, s.bestTimeTitle)}
               </p>
