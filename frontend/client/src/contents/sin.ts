@@ -50,7 +50,8 @@ export default {
     subtitle: "ඔබගේ කැමරාව භාවිතයෙන් සජීවී පක්ෂි හඳුනාගැනීම.",
 
     thresholdLabel: "විශ්වාස සීමාව",
-    paused: "කැමරාව නවතා ඇත. සෙවීම ආරම්භ කිරීමට Start ක්ලික් කරන්න.",
+    paused:
+      "කැමරාව නවතා ඇත. සෙවීම ආරම්භ කිරීමට Start ක්ලික් කරන්න.",
 
     start: "ආරම්භ කරන්න",
     stop: "නවත්වන්න",
@@ -73,6 +74,12 @@ export default {
     statusDetecting: "සජීවීව විශේෂ හඳුනාගනිමින්",
     statusStandby: "රැකවරණය",
 
+    // Camera alert texts
+    cameraNotDetected: "කැමරාව හඳුනාගත නොහැක",
+    noCamera: "කැමරාවක් නොමැත",
+    connectCameraMessage:
+      "කරුණාකර කැමරාව සම්බන්ධ කරන්න හෝ වෙනත් කැමරාවක් තෝරන්න.",
+
     tip1: "කුරුල්ලා පෙන්වන්න",
     tip2: "හොඳ ආලෝකය තබන්න",
     tip3: "කැමරාව ස්ථාවරව තබන්න",
@@ -82,7 +89,8 @@ export default {
 
     // Best time card
     bestTimeTitle: "හොඳම වේලාව",
-    bestTimeDesc: "පාන්දර (6–9 AM) කුරුල්ලන් වැඩිපුර පෙනෙන අතර සක්‍රීයව සිටින නිසා නිරීක්ෂණයට හොඳම වේලාවයි."
+    bestTimeDesc:
+      "පාන්දර (6–9 AM) කුරුල්ලන් වැඩිපුර පෙනෙන අතර සක්‍රීයව සිටින නිසා නිරීක්ෂණයට හොඳම වේලාවයි.",
   },
 
   upload: {
@@ -146,32 +154,38 @@ export default {
       modelAccuracy: {
         title: "ආකෘති නිරවද්‍යතාව",
         value: "90%",
-        description: "YOLOv8 + ResNet50 සමස්ත හඳුනාගැනීමේ නිරවද්‍යතාව",
+        description:
+          "YOLOv8 + ResNet50 සමස්ත හඳුනාගැනීමේ නිරවද්‍යතාව",
       },
       inferenceSpeed: {
         title: "හඳුනාගැනීමේ වේගය",
         value: "25 FPS",
-        description: "GPU උපාංගවල සාමාන්‍ය සජීවී හඳුනාගැනීමේ වේගය",
+        description:
+          "GPU උපාංගවල සාමාන්‍ය සජීවී හඳුනාගැනීමේ වේගය",
       },
       cpuUsage: {
         title: "CPU භාවිතය",
         value: "65%",
-        description: "සජීවී හඳුනාගැනීමේදී සාමාන්‍ය CPU භාරය",
+        description:
+          "සජීවී හඳුනාගැනීමේදී සාමාන්‍ය CPU භාරය",
       },
       responseTime: {
         title: "ප්‍රතිචාර කාලය",
         value: "0.4s",
-        description: "සාමාන්‍ය හඳුනාගැනීමේ ප්‍රතිචාර ප්‍රමාදය",
+        description:
+          "සාමාන්‍ය හඳුනාගැනීමේ ප්‍රතිචාර ප්‍රමාදය",
       },
       powerEfficiency: {
         title: "බලශක්ති කාර්යක්ෂමතාව",
         value: "ප්‍රශස්ත",
-        description: "Edge-based deployment සඳහා නිර්මාණය කර ඇත",
+        description:
+          "Edge-based deployment සඳහා නිර්මාණය කර ඇත",
       },
       systemStability: {
         title: "පද්ධති ස්ථායිතාව",
         value: "ඉහළ",
-        description: "ප්‍රශස්ත සජීවී හඳුනාගැනීම සමඟ සුමට ක්‍රියාකාරිත්වය",
+        description:
+          "ප්‍රශස්ත සජීවී හඳුනාගැනීම සමඟ සුමට ක්‍රියාකාරිත්වය",
       },
     },
   },

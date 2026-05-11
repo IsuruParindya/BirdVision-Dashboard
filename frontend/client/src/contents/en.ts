@@ -73,6 +73,12 @@ export default {
     statusDetecting: "Detecting species in real-time",
     statusStandby: "Standby",
 
+    // Camera alert texts
+    cameraNotDetected: "Camera Not Detected",
+    noCamera: "No Camera",
+    connectCameraMessage:
+      "Please connect a camera or switch camera source.",
+
     tip1: "Point camera at bird clearly.",
     tip2: "Ensure good lighting.",
     tip3: "Keep camera steady.",
@@ -82,7 +88,8 @@ export default {
 
     // Best time card
     bestTimeTitle: "Best Time",
-    bestTimeDesc: "Early morning (6–9 AM) is the best time for spotting active bird species, as birds are usually more visible and active during this period.",
+    bestTimeDesc:
+      "Early morning (6–9 AM) is the best time for spotting active bird species, as birds are usually more visible and active during this period.",
   },
 
   upload: {

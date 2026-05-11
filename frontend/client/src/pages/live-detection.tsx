@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
 import {
   Camera,
@@ -7,6 +7,7 @@ import {
   Maximize,
   Radio,
   SwitchCamera,
+  AlertTriangle,
 } from "lucide-react";
 import { useLanguage } from "./LanguageContext";
 import { getLiveFeedUrl, API_BASE } from "@/api";
@@ -20,6 +21,7 @@ export default function LiveDetection() {
   const [isScanning, setIsScanning] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState(0);
   const [streamKey, setStreamKey] = useState(0);
+  const [cameraError, setCameraError] = useState(false);
 
   const e = en.liveDetection;
   const s = sin.liveDetection;
@@ -32,6 +34,51 @@ export default function LiveDetection() {
       : eVal;
 
   const streamUrl = `${getLiveFeedUrl()}?camera=${selectedCamera}&t=${streamKey}`;
+
+  const checkCameraAvailability = async () => {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        setCameraError(true);
+        setIsScanning(false);
+        return false;
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(
+        (device) => device.kind === "videoinput"
+      );
+
+      if (videoDevices.length === 0) {
+        setCameraError(true);
+        setIsScanning(false);
+        return false;
+      }
+
+      setCameraError(false);
+      return true;
+    } catch (error) {
+      console.error("Failed to check camera devices:", error);
+      setCameraError(true);
+      setIsScanning(false);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    checkCameraAvailability();
+
+    navigator.mediaDevices?.addEventListener?.(
+      "devicechange",
+      checkCameraAvailability
+    );
+
+    return () => {
+      navigator.mediaDevices?.removeEventListener?.(
+        "devicechange",
+        checkCameraAvailability
+      );
+    };
+  }, []);
 
   const toggleScan = async () => {
     if (isScanning) {
@@ -46,7 +93,13 @@ export default function LiveDetection() {
       setIsScanning(false);
       setStreamKey((prev) => prev + 1);
     } else {
+      const hasCamera = await checkCameraAvailability();
+
+      if (!hasCamera) return;
+
+      setCameraError(false);
       setIsScanning(true);
+      setStreamKey((prev) => prev + 1);
     }
   };
 
@@ -63,6 +116,14 @@ export default function LiveDetection() {
       }
     }
 
+    const hasCamera = await checkCameraAvailability();
+
+    if (!hasCamera) {
+      setSelectedCamera(cameraIndex);
+      return;
+    }
+
+    setCameraError(false);
     setSelectedCamera(cameraIndex);
     setStreamKey((prev) => prev + 1);
   };
@@ -120,31 +181,73 @@ export default function LiveDetection() {
 
           {/* Live Feed */}
           <div className="relative flex-1 aspect-video rounded-3xl overflow-hidden bg-gray-950 shadow-2xl">
-
-            {isScanning ? (
+            {isScanning && !cameraError ? (
               <img
                 key={streamKey}
                 src={streamUrl}
                 alt="Live Feed"
                 className="w-full h-full object-cover"
+                onError={() => {
+                  setCameraError(true);
+                  setIsScanning(false);
+                }}
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                 <div className="relative flex items-center justify-center">
                   <span
-                    className="absolute w-32 h-32 rounded-full border border-primary/10 animate-ping"
+                    className={`absolute w-32 h-32 rounded-full border animate-ping ${
+                      cameraError
+                        ? "border-red-500/10"
+                        : "border-primary/10"
+                    }`}
                     style={{ animationDuration: "3s" }}
                   />
-                  <span className="absolute w-24 h-24 rounded-full border border-primary/20" />
-                  <span className="absolute w-16 h-16 rounded-full border border-primary/30" />
 
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Camera className="w-6 h-6 text-primary/50" />
+                  <span
+                    className={`absolute w-24 h-24 rounded-full border ${
+                      cameraError
+                        ? "border-red-500/20"
+                        : "border-primary/20"
+                    }`}
+                  />
+
+                  <span
+                    className={`absolute w-16 h-16 rounded-full border ${
+                      cameraError
+                        ? "border-red-500/30"
+                        : "border-primary/30"
+                    }`}
+                  />
+
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      cameraError
+                        ? "bg-red-500/10"
+                        : "bg-primary/10"
+                    }`}
+                  >
+                    {cameraError ? (
+                      <AlertTriangle className="w-6 h-6 text-red-400" />
+                    ) : (
+                      <Camera className="w-6 h-6 text-primary/50" />
+                    )}
                   </div>
                 </div>
 
-                <p className="text-white/30 text-sm font-medium tracking-wide text-center px-8">
-                  {getBoth(e.paused, s.paused)}
+                <p
+                  className={`text-sm font-medium tracking-wide text-center px-8 ${
+                    cameraError
+                      ? "text-red-400"
+                      : "text-white/30"
+                  }`}
+                >
+                  {cameraError
+                    ? getBoth(
+                        e.cameraNotDetected,
+                        s.cameraNotDetected
+                      )
+                    : getBoth(e.paused, s.paused)}
                 </p>
               </div>
             )}
@@ -153,16 +256,26 @@ export default function LiveDetection() {
             <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
               <Radio
                 className={`w-3.5 h-3.5 ${
-                  isScanning ? "text-emerald-400" : "text-white/30"
+                  cameraError
+                    ? "text-red-400"
+                    : isScanning
+                    ? "text-emerald-400"
+                    : "text-white/30"
                 }`}
               />
 
               <span
                 className={`text-xs font-semibold tracking-wide ${
-                  isScanning ? "text-emerald-300" : "text-white/30"
+                  cameraError
+                    ? "text-red-300"
+                    : isScanning
+                    ? "text-emerald-300"
+                    : "text-white/30"
                 }`}
               >
-                {isScanning
+                {cameraError
+                  ? getBoth(e.noCamera, s.noCamera)
+                  : isScanning
                   ? getBoth(e.liveLabel, s.liveLabel)
                   : getBoth(e.statusStandby, s.statusStandby)}
               </span>
@@ -177,7 +290,7 @@ export default function LiveDetection() {
               <Maximize className="w-4 h-4" />
             </button>
 
-            {/* Bottom Control */}
+            {/* Bottom Button */}
             <div className="absolute bottom-0 inset-x-0 flex items-center justify-center p-5 bg-gradient-to-t from-black/60 via-black/20 to-transparent">
               <button
                 onClick={toggleScan}
@@ -208,7 +321,9 @@ export default function LiveDetection() {
             {/* Status */}
             <div
               className={`rounded-2xl p-4 border transition-all duration-500 ${
-                isScanning
+                cameraError
+                  ? "bg-red-50 border-red-200"
+                  : isScanning
                   ? "bg-emerald-50 border-emerald-200"
                   : "bg-gray-50 border-gray-200"
               }`}
@@ -218,30 +333,53 @@ export default function LiveDetection() {
               </p>
 
               <div className="flex items-center gap-2">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    isScanning
-                      ? "bg-emerald-500 animate-pulse"
-                      : "bg-gray-300"
-                  }`}
-                />
+                {cameraError ? (
+                  <AlertTriangle className="w-4 h-4 text-red-500" />
+                ) : (
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isScanning
+                        ? "bg-emerald-500 animate-pulse"
+                        : "bg-gray-300"
+                    }`}
+                  />
+                )}
 
                 <span
                   className={`text-sm font-bold ${
-                    isScanning
+                    cameraError
+                      ? "text-red-600"
+                      : isScanning
                       ? "text-emerald-700"
                       : "text-gray-400"
                   }`}
                 >
-                  {isScanning
+                  {cameraError
+                    ? getBoth(
+                        e.cameraNotDetected,
+                        s.cameraNotDetected
+                      )
+                    : isScanning
                     ? getBoth(e.statusActive, s.statusActive)
                     : getBoth(e.statusIdle, s.statusIdle)}
                 </span>
               </div>
 
-              {isScanning && (
+              {cameraError && (
+                <p className="text-xs text-red-500 mt-2 leading-relaxed">
+                  {getBoth(
+                    e.connectCameraMessage,
+                    s.connectCameraMessage
+                  )}
+                </p>
+              )}
+
+              {isScanning && !cameraError && (
                 <p className="text-xs text-emerald-600 mt-2 leading-relaxed">
-                  {getBoth(e.statusDetecting, s.statusDetecting)}
+                  {getBoth(
+                    e.statusDetecting,
+                    s.statusDetecting
+                  )}
                 </p>
               )}
             </div>
@@ -270,18 +408,20 @@ export default function LiveDetection() {
               </p>
 
               <ul className="space-y-2.5">
-                {(["tip1", "tip2", "tip3"] as const).map((key, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-xs text-gray-500 leading-relaxed"
-                  >
-                    <span className="mt-0.5 w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
-                      {i + 1}
-                    </span>
+                {(["tip1", "tip2", "tip3"] as const).map(
+                  (key, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-xs text-gray-500 leading-relaxed"
+                    >
+                      <span className="mt-0.5 w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
+                        {i + 1}
+                      </span>
 
-                    {getBoth(e[key], s[key])}
-                  </li>
-                ))}
+                      {getBoth(e[key], s[key])}
+                    </li>
+                  )
+                )}
               </ul>
             </div>
 
