@@ -290,7 +290,7 @@ export default function LiveDetection() {
             </div>
 
             {/* Best Time */}
-            <div className="rounded-2xl p-4 bg-gray-50 border border-gray-200 h-[160px] flex flex-col justify-center">
+            <div className="rounded-2xl p-4 bg-gray-50 border border-gray-200 h-[160px]">
               <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">
                 {getBoth(e.bestTimeTitle, s.bestTimeTitle)}
               </p>
