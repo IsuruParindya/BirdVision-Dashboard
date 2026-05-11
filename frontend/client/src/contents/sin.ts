@@ -19,8 +19,7 @@ export default {
 
   dashboard: {
     title: "උපකරණ පුවරුව",
-    subtitle:
-      "සජීවී පක්ෂි ජාති නිරීක්ෂණ සහ හඳුනාගැනීමේ පද්ධතිය.",
+    subtitle: "සජීවී පක්ෂි ජාති නිරීක්ෂණ සහ හඳුනාගැනීමේ පද්ධතිය.",
 
     recentImageDetections: "මෑත රූප අනාවරණ",
     recentVideoDetections: "මෑත වීඩියෝ අනාවරණ",
@@ -48,12 +47,10 @@ export default {
 
   liveDetection: {
     title: "සජීවී හඳුනාගැනීම",
-    subtitle:
-      "ඔබගේ කැමරාව භාවිතයෙන් සජීවී පක්ෂි හඳුනාගැනීම.",
+    subtitle: "ඔබගේ කැමරාව භාවිතයෙන් සජීවී පක්ෂි හඳුනාගැනීම.",
 
     thresholdLabel: "විශ්වාස සීමාව",
-    paused:
-      "කැමරාව නවතා ඇත. සෙවීම ආරම්භ කිරීමට Start ක්ලික් කරන්න.",
+    paused: "කැමරාව නවතා ඇත. සෙවීම ආරම්භ කිරීමට Start ක්ලික් කරන්න.",
 
     start: "ආරම්භ කරන්න",
     stop: "නවත්වන්න",
@@ -61,6 +58,27 @@ export default {
     confidence: "විශ්වාසය",
     audio: "ශබ්දය",
     liveLabel: "සජීවී සංදර්ශනය",
+
+    // Camera selector
+    laptopCamera: "ලැප්ටොප්",
+    externalCamera: "බාහිර",
+
+    // Side panel
+    sectionStatus: "තත්ත්වය",
+    sectionCamera: "කැමරාව",
+    sectionTips: "ඉඟි",
+
+    statusActive: "ක්‍රියාකාරී",
+    statusIdle: "අක්‍රිය",
+    statusDetecting: "සජීවීව විශේෂ හඳුනාගනිමින්",
+    statusStandby: "රැකවරණය",
+
+    tip1: "කුරුල්ලා පැහැදිලිව කැමරාවට ගන්න",
+    tip2: "හොඳ ආලෝකය සහතික කරන්න",
+    tip3: "කැමරාව ස්ථාවරව තබන්න",
+
+    // Top label
+    realTimeRecognition: "සජීවී හඳුනාගැනීම",
   },
 
   upload: {
@@ -79,8 +97,7 @@ export default {
     clear: "ඉවත් කරන්න",
 
     resultTitle: "විශ්ලේෂණ ප්‍රතිඵලය",
-    processing:
-      "නියුරල් ජාලය හරහා සකසමින්...",
+    processing: "නියුරල් ජාලය හරහා සකසමින්...",
 
     primaryMatch: "ප්‍රධාන ගැළපීම",
     confidenceScore: "විශ්වාස ලකුණු",
@@ -125,51 +142,39 @@ export default {
       modelAccuracy: {
         title: "ආකෘති නිරවද්‍යතාව",
         value: "90%",
-        description:
-          "YOLOv8 + ResNet50 සමස්ත හඳුනාගැනීමේ නිරවද්‍යතාව",
+        description: "YOLOv8 + ResNet50 සමස්ත හඳුනාගැනීමේ නිරවද්‍යතාව",
       },
-
       inferenceSpeed: {
         title: "හඳුනාගැනීමේ වේගය",
         value: "25 FPS",
-        description:
-          "GPU උපාංගවල සාමාන්‍ය සජීවී හඳුනාගැනීමේ වේගය",
+        description: "GPU උපාංගවල සාමාන්‍ය සජීවී හඳුනාගැනීමේ වේගය",
       },
-
       cpuUsage: {
         title: "CPU භාවිතය",
         value: "65%",
-        description:
-          "සජීවී හඳුනාගැනීමේදී සාමාන්‍ය CPU භාරය",
+        description: "සජීවී හඳුනාගැනීමේදී සාමාන්‍ය CPU භාරය",
       },
-
       responseTime: {
         title: "ප්‍රතිචාර කාලය",
         value: "0.4s",
-        description:
-          "සාමාන්‍ය හඳුනාගැනීමේ ප්‍රතිචාර ප්‍රමාදය",
+        description: "සාමාන්‍ය හඳුනාගැනීමේ ප්‍රතිචාර ප්‍රමාදය",
       },
-
       powerEfficiency: {
         title: "බලශක්ති කාර්යක්ෂමතාව",
         value: "ප්‍රශස්ත",
-        description:
-          "Edge-based deployment සඳහා නිර්මාණය කර ඇත",
+        description: "Edge-based deployment සඳහා නිර්මාණය කර ඇත",
       },
-
       systemStability: {
         title: "පද්ධති ස්ථායිතාව",
         value: "ඉහළ",
-        description:
-          "ප්‍රශස්ත සජීවී හඳුනාගැනීම සමඟ සුමට ක්‍රියාකාරිත්වය",
+        description: "ප්‍රශස්ත සජීවී හඳුනාගැනීම සමඟ සුමට ක්‍රියාකාරිත්වය",
       },
     },
   },
 
   settings: {
     title: "සැකසුම්",
-    subtitle:
-      "ඔබගේ පද්ධති මනාපයන් වින්‍යාස කරන්න.",
+    subtitle: "ඔබගේ පද්ධති මනාපයන් වින්‍යාස කරන්න.",
 
     displayLanguage: "සංදර්ශන භාෂාව",
 
@@ -183,20 +188,15 @@ export default {
     options: {
       english: {
         label: "English Only",
-        desc:
-          "සියලු UI සහ ප්‍රතිඵල ඉංග්‍රීසියෙන් පෙන්වන්න.",
+        desc: "සියලු UI සහ ප්‍රතිඵල ඉංග්‍රීසියෙන් පෙන්වන්න.",
       },
-
       sinhala: {
         label: "(සිංහල)",
-        desc:
-          "සියලු UI සහ ප්‍රතිඵල සිංහලෙන් පෙන්වන්න.",
+        desc: "සියලු UI සහ ප්‍රතිඵල සිංහලෙන් පෙන්වන්න.",
       },
-
       both: {
         label: "Bilingual (Recommended)",
-        desc:
-          "ඉංග්‍රීසි සමඟ සිංහල පරිවර්තන පෙන්වන්න.",
+        desc: "ඉංග්‍රීසි සමඟ සිංහල පරිවර්තන පෙන්වන්න.",
       },
     },
   },

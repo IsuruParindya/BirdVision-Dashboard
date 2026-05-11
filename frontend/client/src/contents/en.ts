@@ -18,14 +18,13 @@ export default {
   },
 
   dashboard: {
-  title: "Dashboard",
-  subtitle:
-    "Real-time bird species monitoring and identification system.",
+    title: "Dashboard",
+    subtitle: "Real-time bird species monitoring and identification system.",
 
-  recentImageDetections: "Recent Image Detections",
-  recentVideoDetections: "Recent Video Detections",
+    recentImageDetections: "Recent Image Detections",
+    recentVideoDetections: "Recent Video Detections",
 
-  stats: {
+    stats: {
       totalDetections: "Total Detections",
       speciesIdentified: "Bird Species Identified",
       avgConfidence: "Avg. Confidence",
@@ -48,12 +47,10 @@ export default {
 
   liveDetection: {
     title: "Live Detection",
-    subtitle:
-      "Real-time species recognition using your camera.",
+    subtitle: "Real-time species recognition using your camera.",
 
     thresholdLabel: "Confidence Threshold",
-    paused:
-      "Camera paused. Click Start to begin detection.",
+    paused: "Camera paused. Click Start to begin detection.",
 
     start: "Start",
     stop: "Stop",
@@ -61,6 +58,27 @@ export default {
     confidence: "Confidence",
     audio: "Audio",
     liveLabel: "Live Feed",
+
+    // Camera selector
+    laptopCamera: "Laptop",
+    externalCamera: "External",
+
+    // Side panel
+    sectionStatus: "Status",
+    sectionCamera: "Camera",
+    sectionTips: "Tips",
+
+    statusActive: "Active",
+    statusIdle: "Idle",
+    statusDetecting: "Detecting species in real-time",
+    statusStandby: "Standby",
+
+    tip1: "Point camera at the bird clearly",
+    tip2: "Ensure good lighting",
+    tip3: "Keep camera steady",
+
+    // Top label
+    realTimeRecognition: "Real-Time Recognition",
   },
 
   upload: {
@@ -79,8 +97,7 @@ export default {
     clear: "Clear",
 
     resultTitle: "Analysis Result",
-    processing:
-      "Processing media via neural network...",
+    processing: "Processing media via neural network...",
 
     primaryMatch: "Primary Match",
     confidenceScore: "Confidence Score",
@@ -125,51 +142,39 @@ export default {
       modelAccuracy: {
         title: "Model Accuracy",
         value: "90%",
-        description:
-          "YOLOv8 + ResNet50 overall detection accuracy",
+        description: "YOLOv8 + ResNet50 overall detection accuracy",
       },
-
       inferenceSpeed: {
         title: "Inference Speed",
         value: "25 FPS",
-        description:
-          "Average live feed detection speed on GPU devices",
+        description: "Average live feed detection speed on GPU devices",
       },
-
       cpuUsage: {
         title: "CPU Usage",
         value: "65%",
-        description:
-          "Average CPU load during real-time detection",
+        description: "Average CPU load during real-time detection",
       },
-
       responseTime: {
         title: "Response Time",
         value: "0.4s",
-        description:
-          "Average detection response latency",
+        description: "Average detection response latency",
       },
-
       powerEfficiency: {
         title: "Power Efficiency",
         value: "Optimized",
-        description:
-          "Designed for edge-based deployment",
+        description: "Designed for edge-based deployment",
       },
-
       systemStability: {
         title: "System Stability",
         value: "High",
-        description:
-          "Smooth detection with optimized live feed",
+        description: "Smooth detection with optimized live feed",
       },
     },
   },
 
   settings: {
     title: "Settings",
-    subtitle:
-      "Configure your system preferences.",
+    subtitle: "Configure your system preferences.",
 
     displayLanguage: "Display Language",
 
@@ -183,20 +188,15 @@ export default {
     options: {
       english: {
         label: "English Only",
-        desc:
-          "Display all UI and results in English.",
+        desc: "Display all UI and results in English.",
       },
-
       sinhala: {
         label: "Sinhala Only (සිංහල)",
-        desc:
-          "Display all UI and results in Sinhala.",
+        desc: "Display all UI and results in Sinhala.",
       },
-
       both: {
         label: "Bilingual (Recommended)",
-        desc:
-          "Display English with prominent Sinhala translations.",
+        desc: "Display English with prominent Sinhala translations.",
       },
     },
   },

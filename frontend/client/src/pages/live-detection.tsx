@@ -5,6 +5,8 @@ import {
   StopCircle,
   Play,
   Maximize,
+  Radio,
+  SwitchCamera,
 } from "lucide-react";
 import { useLanguage } from "./LanguageContext";
 import { getLiveFeedUrl, API_BASE } from "@/api";
@@ -18,6 +20,7 @@ export default function LiveDetection() {
   const [isScanning, setIsScanning] = useState(false);
   const [selectedCamera, setSelectedCamera] = useState(0);
   const [streamKey, setStreamKey] = useState(0);
+
   const e = en.liveDetection;
   const s = sin.liveDetection;
 
@@ -29,16 +32,14 @@ export default function LiveDetection() {
       : eVal;
 
   const streamUrl = `${getLiveFeedUrl()}?camera=${selectedCamera}&t=${streamKey}`;
+
   const toggleScan = async () => {
     if (isScanning) {
       try {
-        await fetch(`${API_BASE}/stop-live-feed`, {
-          method: "POST",
-        });
+        await fetch(`${API_BASE}/stop-live-feed`, { method: "POST" });
       } catch (error) {
         console.error("Failed to stop camera:", error);
       }
-
       setIsScanning(false);
       setStreamKey((prev) => prev + 1);
     } else {
@@ -48,143 +49,217 @@ export default function LiveDetection() {
 
   const switchCamera = async (cameraIndex: number) => {
     if (selectedCamera === cameraIndex) return;
-
     if (isScanning) {
       try {
-        await fetch(`${API_BASE}/stop-live-feed`, {
-          method: "POST",
-        });
+        await fetch(`${API_BASE}/stop-live-feed`, { method: "POST" });
       } catch (error) {
         console.error("Failed stopping old camera:", error);
       }
     }
-
     setSelectedCamera(cameraIndex);
     setStreamKey((prev) => prev + 1);
   };
 
   return (
     <AppLayout>
-      <div className="flex flex-col h-[calc(100vh-6rem)] gap-6">
+      <div className="flex flex-col h-[calc(100vh-6rem)] gap-0">
 
-        {/* Header */}
-        <div className="flex justify-between items-start gap-6">
+        {/* ── Top bar ── */}
+        <div className="flex items-center justify-between mb-5">
           <div>
-            <h1 className="text-4xl font-display font-bold text-foreground">
+            <p className="text-xs font-semibold tracking-[0.2em] uppercase text-primary/60 mb-1">
+              {getBoth(e.realTimeRecognition, s.realTimeRecognition)}
+            </p>
+            <h1 className="text-3xl font-display font-bold text-foreground leading-none">
               {getBoth(e.title, s.title)}
             </h1>
-
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm text-muted-foreground mt-1.5">
               {getBoth(e.subtitle, s.subtitle)}
             </p>
           </div>
 
-          {/* Camera Switch Buttons */}
-          <div className="flex items-center gap-3">
+          {/* Camera selector — pill toggle */}
+          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-2xl border border-gray-200">
             <button
               onClick={() => switchCamera(0)}
-              className={`px-5 py-3 rounded-xl font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 selectedCamera === 0
-                  ? "bg-primary/90 text-white shadow-lg"
-                  : "bg-white border text-gray-700 hover:bg-gray-50"
+                  ? "bg-white text-primary shadow-sm border border-gray-200"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              Laptop Camera
+              <Camera className="w-4 h-4" />
+              {getBoth(e.laptopCamera, s.laptopCamera)}
             </button>
-
             <button
               onClick={() => switchCamera(1)}
-              className={`px-5 py-3 rounded-xl font-semibold transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 selectedCamera === 1
-                  ? "bg-primary/90 text-white shadow-lg"
-                  : "bg-white border text-gray-700 hover:bg-gray-50"
+                  ? "bg-white text-primary shadow-sm border border-gray-200"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              External Camera
+              <SwitchCamera className="w-4 h-4" />
+              {getBoth(e.externalCamera, s.externalCamera)}
             </button>
           </div>
         </div>
 
-        {/* Camera Stage */}
-        <div className="relative flex-1 rounded-[32px] overflow-hidden bg-white shadow-2xl border-2 border-dashed border-primary/30 flex items-center justify-center group">
+        {/* ── Main layout: feed + side panel ── */}
+        <div className="flex flex-1 gap-4 min-h-0">
 
-          {/* Live Label */}
-          <div className="absolute top-4 left-4 flex items-center gap-2 z-30">
-            <Camera className="w-6 h-6 text-accent animate-pulse" />
+          {/* Feed */}
+          <div className="relative flex-1 rounded-3xl overflow-hidden bg-gray-950 shadow-2xl">
 
-            <span className="text-accent font-semibold">
-              {getBoth(e.liveLabel, s.liveLabel)}
-            </span>
+            {isScanning ? (
+              <img
+                key={streamKey}
+                src={streamUrl}
+                alt="Live Feed"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                <div className="relative flex items-center justify-center">
+                  <span
+                    className="absolute w-32 h-32 rounded-full border border-primary/10 animate-ping"
+                    style={{ animationDuration: "3s" }}
+                  />
+                  <span className="absolute w-24 h-24 rounded-full border border-primary/20" />
+                  <span className="absolute w-16 h-16 rounded-full border border-primary/30" />
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Camera className="w-6 h-6 text-primary/50" />
+                  </div>
+                </div>
+                <p className="text-white/30 text-sm font-medium tracking-wide text-center px-8">
+                  {getBoth(e.paused, s.paused)}
+                </p>
+              </div>
+            )}
+
+            {/* Live feed badge — top left */}
+            <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
+              <Radio
+                className={`w-3.5 h-3.5 ${isScanning ? "text-emerald-400" : "text-white/30"}`}
+              />
+              <span
+                className={`text-xs font-semibold tracking-wide ${
+                  isScanning ? "text-emerald-300" : "text-white/30"
+                }`}
+              >
+                {isScanning
+                  ? getBoth(e.liveLabel, s.liveLabel)
+                  : getBoth(e.statusStandby, s.statusStandby)}
+              </span>
+            </div>
+
+            {/* Maximize — top right */}
+            <button
+              type="button"
+              className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-xl bg-black/30 backdrop-blur-sm text-white/60 hover:text-white hover:bg-black/50 transition-all border border-white/10"
+              aria-label="Maximize"
+            >
+              <Maximize className="w-4 h-4" />
+            </button>
+
+            {/* Bottom control bar */}
+            <div className="absolute bottom-0 inset-x-0 flex items-center justify-center p-5 bg-gradient-to-t from-black/60 via-black/20 to-transparent">
+              <button
+                onClick={toggleScan}
+                className={`inline-flex items-center gap-2.5 px-7 py-3 rounded-2xl font-bold text-sm shadow-xl transition-all duration-300 ${
+                  isScanning
+                    ? "bg-red-500 text-white hover:bg-red-600 hover:shadow-red-500/30 hover:shadow-2xl"
+                    : "bg-primary text-white hover:bg-primary/90 hover:shadow-primary/30 hover:shadow-2xl hover:-translate-y-0.5"
+                }`}
+              >
+                {isScanning ? (
+                  <>
+                    <StopCircle className="w-4 h-4" />
+                    {getBoth(e.stop, s.stop)}
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 fill-current" />
+                    {getBoth(e.start, s.start)}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Small Live Status Alert */}
-          {isScanning && (
-            <div className="absolute top-4 right-4 z-30 bg-green-100 text-green-700 px-4 py-2 rounded-full shadow-md text-sm font-semibold flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary/90 animate-pulse" />
-              Live Detection Active
-            </div>
-          )}
+          {/* ── Side panel ── */}
+          <div className="w-56 flex flex-col gap-3 shrink-0 self-start">
 
-          {/* Live Stream */}
-          {isScanning ? (
-            <img
-              key={streamKey}
-              src={streamUrl}
-              alt="Live Feed"
-              className="w-full h-full object-cover transition-opacity duration-700"
-            />
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-black/40 text-center px-6">
-              <Camera className="w-16 h-16 mb-4 opacity-50" />
-
-              <p className="text-lg font-medium tracking-wide">
-                {getBoth(e.paused, s.paused)}
+            {/* Status card */}
+            <div
+              className={`rounded-2xl p-4 border transition-all duration-500 ${
+                isScanning
+                  ? "bg-emerald-50 border-emerald-200"
+                  : "bg-gray-50 border-gray-200"
+              }`}
+            >
+              <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">
+                {getBoth(e.sectionStatus, s.sectionStatus)}
               </p>
-            </div>
-          )}
-
-          {/* Controls */}
-          <div className="absolute bottom-8 inset-x-0 z-30 px-8">
-            <div className="relative w-full h-11">
-
-              {/* Start / Stop */}
-              <div className="absolute left-1/2 -translate-x-1/2">
-                <button
-                  onClick={toggleScan}
-                  className={`h-11 inline-flex items-center justify-center gap-2 px-5 rounded-xl font-bold text-base shadow-xl transition-all duration-300 ${
-                    isScanning
-                      ? "bg-red-500/90 text-white hover:bg-red-500 backdrop-blur-md hover:shadow-red-500/25"
-                      : "bg-primary/90 text-white hover:bg-primary backdrop-blur-md hover:shadow-primary/25 hover:-translate-y-0.5"
+              <div className="flex items-center gap-2">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isScanning ? "bg-emerald-500 animate-pulse" : "bg-gray-300"
+                  }`}
+                />
+                <span
+                  className={`text-sm font-bold ${
+                    isScanning ? "text-emerald-700" : "text-gray-400"
                   }`}
                 >
-                  {isScanning ? (
-                    <>
-                      <StopCircle className="w-5 h-5" />
-                      {getBoth(e.stop, s.stop)}
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-5 h-5" />
-                      {getBoth(e.start, s.start)}
-                    </>
-                  )}
-                </button>
+                  {isScanning
+                    ? getBoth(e.statusActive, s.statusActive)
+                    : getBoth(e.statusIdle, s.statusIdle)}
+                </span>
               </div>
-
-              {/* Maximize */}
-              <div className="absolute right-0">
-                <button
-                  type="button"
-                  className="h-11 w-11 inline-flex items-center justify-center rounded-xl bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all border border-white/20"
-                  aria-label="Maximize"
-                >
-                  <Maximize className="w-6 h-6" />
-                </button>
-              </div>
-
+              {isScanning && (
+                <p className="text-xs text-emerald-600 mt-2 leading-relaxed">
+                  {getBoth(e.statusDetecting, s.statusDetecting)}
+                </p>
+              )}
             </div>
-          </div>
 
+            {/* Camera card */}
+            <div className="rounded-2xl p-4 bg-gray-50 border border-gray-200">
+              <p className="text-xs font-semibold tracking-widest uppercase text-gray-400 mb-2">
+                {getBoth(e.sectionCamera, s.sectionCamera)}
+              </p>
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold text-gray-700">
+                  {selectedCamera === 0
+                    ? getBoth(e.laptopCamera, s.laptopCamera)
+                    : getBoth(e.externalCamera, s.externalCamera)}
+                </span>
+              </div>
+            </div>
+
+            {/* Tips card */}
+            <div className="rounded-2xl p-4 bg-primary/5 border border-primary/15">
+              <p className="text-xs font-semibold tracking-widest uppercase text-primary/50 mb-3">
+                {getBoth(e.sectionTips, s.sectionTips)}
+              </p>
+              <ul className="space-y-2.5">
+                {(["tip1", "tip2", "tip3"] as const).map((key, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-xs text-gray-500 leading-relaxed"
+                  >
+                    <span className="mt-0.5 w-4 h-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">
+                      {i + 1}
+                    </span>
+                    {getBoth(e[key], s[key])}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+          </div>
         </div>
       </div>
     </AppLayout>
