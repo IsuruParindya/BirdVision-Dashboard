@@ -82,7 +82,7 @@ export default {
 
     // Best time card
     bestTimeTitle: "හොඳම වේලාව",
-    bestTimeDesc: "පාන්දර (6–9 AM) කුරුළු නිරීක්ෂණයට හොඳම වේලාවයි."
+    bestTimeDesc: "පාන්දර (6–9 AM) කුරුල්ලන් වැඩිපුර පෙනෙන අතර සක්‍රීයව සිටින නිසා නිරීක්ෂණයට හොඳම වේලාවයි."
   },
 
   upload: {
