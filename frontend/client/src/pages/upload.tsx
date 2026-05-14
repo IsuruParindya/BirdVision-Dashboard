@@ -8,6 +8,8 @@ import { useLanguage } from "@/pages/LanguageContext";
 import en from "@/contents/en";
 import sin from "@/contents/sin";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type LangMode = "english" | "sinhala" | "both";
 
 type Result = {
@@ -161,15 +163,33 @@ export default function Upload() {
       if (file.type.startsWith("video")) {
         setMode("video");
 
-        const data = await predictVideo(file);
-        if (data.error) { setError(data.error); setLoading(false); return; }
+        // Show original video immediately while backend processes
+        const originalUrl = URL.createObjectURL(file);
+        setVideoBlob(originalUrl);
 
+        const data = await predictVideo(file);
+
+        if (data.error) {
+          // Keep original video on left, show error on right
+          setError(data.error);
+          setLoading(false);
+          return;
+        }
+
+        // Replace original with processed bounding-box video from backend
         if (data.video) {
           const bytes = Uint8Array.from(atob(data.video), c => c.charCodeAt(0));
           const blob  = new Blob([bytes], { type: "video/mp4" });
           const url   = URL.createObjectURL(blob);
           setVideoBlob(url);
           store.video.videoBlob = url;
+
+          // Force the video element to reload with the new bounding-box source
+          setTimeout(() => {
+            if (videoElRef.current) {
+              videoElRef.current.load();
+            }
+          }, 100);
         }
 
         const r = applyResult(data, Math.round((data.confidence || 0) * 100));
@@ -182,17 +202,23 @@ export default function Upload() {
       /* ── IMAGE ── */
       setMode("image");
 
+      // Show original immediately while API processes
       const immediateUrl = URL.createObjectURL(file);
       setPreview(immediateUrl);
 
       const data = await predictImage(file);
-      if (data.error) { setError(data.error); setLoading(false); return; }
+
+      if (data.error) {
+        // Keep original image on left, show error on right
+        setError(data.error);
+        setLoading(false);
+        return;
+      }
 
       let conf = Math.round((data.confidence || 0) * 100);
       if (conf >= 100) conf = 99;
 
       setTimeout(() => {
-        // Replace with bounding-box version from API
         const bbUrl = data.image
           ? `data:image/jpeg;base64,${data.image}`
           : immediateUrl;
@@ -211,7 +237,8 @@ export default function Upload() {
     }
   };
 
-  const hasResult = Boolean(preview || videoBlob || result);
+  // Show result section when there's a result, media, OR an error
+  const hasResult = Boolean(preview || videoBlob || result || error);
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
@@ -291,7 +318,9 @@ export default function Upload() {
               {/* Left — media preview */}
               <div className="flex justify-center">
                 {videoBlob ? (
+                  // key forces full remount when URL changes (original → processed)
                   <video
+                    key={videoBlob}
                     ref={videoElRef}
                     controls
                     preload="auto"

@@ -20,7 +20,7 @@ def predict_video():
 
         input_path = tempfile.mktemp(suffix=".mp4")
 
-        # Save processed video to saved_videos/ folder instead of a temp file
+        # Save processed video to saved_videos/ folder
         save_folder = os.path.join(
             os.path.dirname(__file__),
             "saved_videos"
@@ -49,7 +49,7 @@ def predict_video():
         )
 
         detected_info = None
-        frame_count = 0
+        frame_count   = 0
         preview_frame = ""
 
         while True:
@@ -87,20 +87,58 @@ def predict_video():
                     if conf > 0.6:
                         raw_key = raw.lower().replace(" ", "_").strip()
                         detected_info = {
-                            "raw": raw_key,
-                            "confidence": conf,
-                            "englishName": raw_key.replace("_", " ").title()
+                            "raw":         raw_key,
+                            "confidence":  conf,
+                            "englishName": raw_key.replace("_", " ").title(),
+                            "x1": x1, "y1": y1,
+                            "x2": x2, "y2": y2,
                         }
 
-                if detected_info:
+                        # Draw bounding box immediately on this frame
+                        sinhala_name = sinhala.get(raw_key, "")
+                        frame = draw_label(
+                            frame,
+                            x1, y1, x2, y2,
+                            detected_info["englishName"],
+                            sinhala_name,
+                            conf
+                        )
+
+                    elif detected_info:
+                        # Low confidence this frame — keep drawing last known result
+                        sinhala_name = sinhala.get(detected_info["raw"], "")
+                        frame = draw_label(
+                            frame,
+                            detected_info["x1"], detected_info["y1"],
+                            detected_info["x2"], detected_info["y2"],
+                            detected_info["englishName"],
+                            sinhala_name,
+                            detected_info["confidence"]
+                        )
+
+                elif detected_info:
+                    # Empty crop — keep drawing last known result
                     sinhala_name = sinhala.get(detected_info["raw"], "")
                     frame = draw_label(
                         frame,
-                        x1, y1, x2, y2,
+                        detected_info["x1"], detected_info["y1"],
+                        detected_info["x2"], detected_info["y2"],
                         detected_info["englishName"],
                         sinhala_name,
                         detected_info["confidence"]
                     )
+
+            elif detected_info:
+                # No boxes this frame — keep drawing last known result
+                sinhala_name = sinhala.get(detected_info["raw"], "")
+                frame = draw_label(
+                    frame,
+                    detected_info["x1"], detected_info["y1"],
+                    detected_info["x2"], detected_info["y2"],
+                    detected_info["englishName"],
+                    sinhala_name,
+                    detected_info["confidence"]
+                )
 
             if frame_count % 10 == 0:
                 success, buffer = cv2.imencode(".jpg", frame)
@@ -112,65 +150,58 @@ def predict_video():
         cap.release()
         out.release()
 
-        # Read processed video for base64 response to frontend
+        # ── No bird detected ──────────────────────────────────────────────────
+        if detected_info is None:
+            return jsonify({"error": "Unknown bird"})
+
+        # ── Read processed video ──────────────────────────────────────────────
         with open(output_path, "rb") as f:
             video_bytes = f.read()
 
         # ── Bird Details ──────────────────────────────────────────────────────
-
-        details = (
-            species_info.get(detected_info["raw"], {})
-            if detected_info
-            else {}
-        )
+        details      = species_info.get(detected_info["raw"], {})
+        sinhala_name = sinhala.get(detected_info["raw"], "")
+        video_url    = f"/saved_videos/{filename}"
 
         # ── Save to DB ────────────────────────────────────────────────────────
+        print(
+            "Saving VIDEO detection:",
+            detected_info["englishName"],
+            sinhala_name,
+            detected_info["confidence"]
+        )
 
-        video_url = f"/saved_videos/{filename}"
+        save_detection(
+            english_name=detected_info["englishName"],
+            sinhala_name=sinhala_name,
+            confidence=float(detected_info["confidence"]),
+            habitat=details.get("habitat_en", ""),
+            diet=details.get("diet_en", ""),
+            image_url="",
+            video_url=video_url,
+            source_type="video"
+        )
 
-        if detected_info:
-            sinhala_name = sinhala.get(detected_info["raw"], "")
-
-            print(
-                "Saving VIDEO detection:",
-                detected_info["englishName"],
-                sinhala_name,
-                detected_info["confidence"]
-            )
-
-            save_detection(
-                english_name=detected_info["englishName"],
-                sinhala_name=sinhala_name,
-                confidence=float(detected_info["confidence"]),
-                habitat=details.get("habitat_en", ""),
-                diet=details.get("diet_en", ""),
-                image_url="",
-                video_url=video_url,
-                source_type="video"
-            )
-
-            print("VIDEO detection saved successfully")
+        print("VIDEO detection saved successfully")
 
         # ── Performance Update ────────────────────────────────────────────────
-
         update_performance(start_time, frame_count)
 
         # ── Final Response ────────────────────────────────────────────────────
-
         return jsonify({
-            "video": base64.b64encode(video_bytes).decode("utf-8"),
+            "video":        base64.b64encode(video_bytes).decode("utf-8"),
             "preview_frame": preview_frame,
-            "video_url": video_url,
+            "video_url":    video_url,
 
-            "englishName": detected_info["englishName"] if detected_info else "",
-            "sinhalaName": sinhala.get(detected_info["raw"], "") if detected_info else "",
-            "confidence":  detected_info["confidence"] if detected_info else 0,
+            "englishName": detected_info["englishName"],
+            "sinhalaName": sinhala_name,
+            "confidence":  detected_info["confidence"],
 
-            "category":   details.get("category",    ""),
-            "habitat_en": details.get("habitat_en",  ""),
-            "habitat_si": details.get("habitat_si",  ""),
-            "diet_en":    details.get("diet_en",     ""),
-            "diet_si":    details.get("diet_si",     ""),
+            "category":   details.get("category",   ""),
+            "habitat_en": details.get("habitat_en", ""),
+            "habitat_si": details.get("habitat_si", ""),
+            "diet_en":    details.get("diet_en",    ""),
+            "diet_si":    details.get("diet_si",    ""),
         })
 
     except Exception as e:
