@@ -24,6 +24,9 @@ export default {
     recentImageDetections: "මෑත රූප අනාවරණ",
     recentVideoDetections: "මෑත වීඩියෝ අනාවරණ",
 
+    lastSeenViaImage: "රූපය හරහා අවසන් වරට",
+    lastSeenViaVideo: "වීඩියෝව හරහා අවසන් වරට",
+
     stats: {
       totalDetections: "සම්පූර්ණ අනාවරණ",
       speciesIdentified: "හඳුනාගත් පක්ෂි විශේෂ",

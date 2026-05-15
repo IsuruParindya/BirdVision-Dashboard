@@ -3,7 +3,7 @@ import { useDetections, useStats } from "@/hooks/use-birdvision";
 import { deleteDetection } from "@/api";
 import { AppLayout } from "@/components/layout/app-layout";
 import { StatCard } from "@/components/ui/stat-card";
-import { Bird, CheckCircle2, Camera, ScanEye } from "lucide-react";
+import { Bird, CheckCircle2, Camera, ScanEye, Video } from "lucide-react";
 import RecentDetections from "./RecentDetections";
 import { useLanguage } from "./LanguageContext";
 import en from "@/contents/en";
@@ -65,6 +65,22 @@ export default function Dashboard() {
     : language === "both"
     ? `${stats?.mostDetectedBird ?? "No Data"} / ${stats?.mostDetectedBirdSinhala ?? ""}`
     : stats?.mostDetectedBird ?? "No Data";
+
+  // Source type badge — uses en/sin content files + text-green-700 color
+  const mostDetectedSource = stats?.mostDetectedBirdSourceType;
+  const sourceLabel = mostDetectedSource ? (
+    mostDetectedSource === "image" ? (
+      <span className="flex items-center gap-1 text-green-700">
+        <Camera className="w-4 h-4" />
+        {getBoth(e.lastSeenViaImage, s.lastSeenViaImage)}
+      </span>
+    ) : (
+      <span className="flex items-center gap-1 text-green-700">
+        <Video className="w-4 h-4" />
+        {getBoth(e.lastSeenViaVideo, s.lastSeenViaVideo)}
+      </span>
+    )
+  ) : undefined;
 
   /* =========================
      SEPARATE IMAGE + VIDEO
@@ -130,6 +146,7 @@ export default function Dashboard() {
           <StatCard
             title={getBoth(e.stats.mostDetected, s.stats.mostDetected)}
             value={mostDetectedLabel}
+            description={sourceLabel}
             icon={Bird}
           />
 

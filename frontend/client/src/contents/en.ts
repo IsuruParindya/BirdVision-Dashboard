@@ -24,6 +24,9 @@ export default {
     recentImageDetections: "Recent Image Detections",
     recentVideoDetections: "Recent Video Detections",
 
+    lastSeenViaImage: "Last seen via Image",
+    lastSeenViaVideo: "Last seen via Video",
+
     stats: {
       totalDetections: "Total Detections",
       speciesIdentified: "Bird Species Identified",

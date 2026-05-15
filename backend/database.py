@@ -136,6 +136,7 @@ def get_dashboard_stats():
     avg_result = cursor.fetchone()["avg_conf"]
     average_confidence = round(avg_result if avg_result else 0, 2)
 
+    # Most detected bird with sinhala name
     cursor.execute(
         """
         SELECT english_name, sinhala_name, COUNT(*) as total
@@ -150,14 +151,29 @@ def get_dashboard_stats():
     most_detected_english = most_detected["english_name"] if most_detected else "No Data"
     most_detected_sinhala = most_detected["sinhala_name"] if most_detected else "දත්ත නැත"
 
+    # Latest source_type for the most detected bird
+    most_detected_source = ""
+    if most_detected:
+        row = conn.execute(
+            """
+            SELECT source_type FROM detections
+            WHERE english_name = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (most_detected_english,)
+        ).fetchone()
+        most_detected_source = row["source_type"] if row else ""
+
     conn.close()
 
     return {
-        "totalDetections":        total_detections,
-        "speciesIdentified":      species_identified,
-        "averageConfidence":      average_confidence,
-        "mostDetectedBird":       most_detected_english,
-        "mostDetectedBirdSinhala": most_detected_sinhala,
+        "totalDetections":            total_detections,
+        "speciesIdentified":          species_identified,
+        "averageConfidence":          average_confidence,
+        "mostDetectedBird":           most_detected_english,
+        "mostDetectedBirdSinhala":    most_detected_sinhala,
+        "mostDetectedBirdSourceType": most_detected_source,
     }
 
 

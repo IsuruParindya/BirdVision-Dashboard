@@ -1,10 +1,11 @@
 import { LucideIcon } from "lucide-react";
+import { ReactNode } from "react";
 
 interface StatCardProps {
   title: string;
   value: string | number;
   icon: LucideIcon;
-  description?: string;
+  description?: ReactNode;
   trend?: "up" | "down" | "neutral";
 }
 
@@ -15,11 +16,11 @@ export function StatCard({ title, value, icon: Icon, description, trend }: StatC
         <div>
           <p className="text-muted-foreground font-medium mb-1">{title}</p>
           <h3 className="text-4xl font-display font-bold text-foreground tracking-tight">{value}</h3>
-          
+
           {description && (
             <p className="text-sm mt-2 flex items-center gap-1">
-              <span className={`font-semibold ${
-                trend === 'up' ? 'text-emerald-500' : 
+              <span className={`font-semibold flex items-center gap-1 ${
+                trend === 'up' ? 'text-emerald-500' :
                 trend === 'down' ? 'text-red-500' : 'text-accent'
               }`}>
                 {description}
