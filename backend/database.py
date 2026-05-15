@@ -138,7 +138,7 @@ def get_dashboard_stats():
 
     cursor.execute(
         """
-        SELECT english_name, COUNT(*) as total
+        SELECT english_name, sinhala_name, COUNT(*) as total
         FROM detections
         GROUP BY english_name
         ORDER BY total DESC
@@ -146,15 +146,18 @@ def get_dashboard_stats():
         """
     )
     most_detected = cursor.fetchone()
-    most_detected_bird = most_detected["english_name"] if most_detected else "No Data"
+
+    most_detected_english = most_detected["english_name"] if most_detected else "No Data"
+    most_detected_sinhala = most_detected["sinhala_name"] if most_detected else "දත්ත නැත"
 
     conn.close()
 
     return {
-        "totalDetections":   total_detections,
-        "speciesIdentified": species_identified,
-        "averageConfidence": average_confidence,
-        "mostDetectedBird":  most_detected_bird,
+        "totalDetections":        total_detections,
+        "speciesIdentified":      species_identified,
+        "averageConfidence":      average_confidence,
+        "mostDetectedBird":       most_detected_english,
+        "mostDetectedBirdSinhala": most_detected_sinhala,
     }
 
 
