@@ -43,5 +43,14 @@
   "habitat_si": "වැව්, ගංගා, මුහුදු තීර සහ තෙත් භූමි",
   "diet_en": "Fish, aquatic animals",
   "diet_si": "මාළු සහ ජල ජීවීන්"
+  },
+  "myna": {
+    "english": "Myna",
+    "sinhala": "මයිනා",
+    "category": "Resident",
+    "habitat_en": "Gardens, urban areas, farmlands",
+    "habitat_si": "ගෙවතු, නගර ප්‍රදේශ සහ වගා භූමි",
+    "diet_en": "Fruits, insects, grains, small animals",
+    "diet_si": "පලතුරු, පළිබෝධ, ධාන්‍ය සහ කුඩා ජීවීන්"
   }
 }
