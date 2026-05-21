@@ -221,7 +221,7 @@ ${getBoth(
         {videoPreview ? (
           <a
             href={videoPreview}
-            download="processed-video.mp4"
+            download={`${new Date().toISOString().slice(0,10).replace(/-/g,"")}_${new Date().toTimeString().slice(0,8).replace(/:/g,"")}.mp4`}
             className="px-5 py-3 bg-primary/90 text-white rounded-xl min-w-[170px] text-center"
           >
             {getBoth(
