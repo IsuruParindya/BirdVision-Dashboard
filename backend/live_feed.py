@@ -7,7 +7,6 @@ import time
 from flask import Blueprint, Response, request, jsonify
 from PIL import Image, ImageDraw, ImageFont
 
-# use shared config + classifier like image_processor.py / video_processor.py
 from config import detector, sinhala
 from classifier import classify
 
@@ -95,23 +94,15 @@ def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
     pil = Image.fromarray(rgb)
     draw = ImageDraw.Draw(pil)
 
-    label_en = f"{english} ({int(conf * 100)}%)"
+    label_en = f"{english} ({int(conf * 100)}%)" if conf > 0 else english
 
     draw.rectangle(
-        [
-            x1,
-            y1 - box_h,
-            x1 + box_w,
-            y1
-        ],
+        [x1, y1 - box_h, x1 + box_w, y1],
         fill=(200, 220, 255)
     )
 
     draw.text(
-        (
-            x1 + padding,
-            y1 - box_h + padding
-        ),
+        (x1 + padding, y1 - box_h + padding),
         label_en,
         font=font_en_dynamic,
         fill=(0, 0, 0)
@@ -154,8 +145,6 @@ def get_camera(camera_index=0):
 
     release_camera()
 
-    # Try the requested index first, then scan nearby indices as fallback
-    # This handles cases where Windows shifts camera indices on USB reconnect
     candidates = [camera_index] + [i for i in range(5) if i != camera_index]
 
     for idx in candidates:
@@ -171,9 +160,7 @@ def get_camera(camera_index=0):
 
         cap.release()
 
-    raise Exception(
-        f"No camera found near index {camera_index}"
-    )
+    raise Exception(f"No camera found near index {camera_index}")
 
 
 # =========================
@@ -204,10 +191,7 @@ def generate_frames(camera_index=0):
         h, w = frame.shape[:2]
         scale = 640 / w
 
-        frame = cv2.resize(
-            frame,
-            (640, int(h * scale))
-        )
+        frame = cv2.resize(frame, (640, int(h * scale)))
 
         current_time = time.time()
 
@@ -224,44 +208,36 @@ def generate_frames(camera_index=0):
 
             if results.boxes is not None and len(results.boxes) > 0:
                 for b in results.boxes[:3]:
-                    x1, y1, x2, y2 = map(
-                        int,
-                        b.xyxy[0]
-                    )
+                    x1, y1, x2, y2 = map(int, b.xyxy[0])
 
                     crop = frame[y1:y2, x1:x2]
 
                     if crop.size == 0:
                         continue
 
-                    raw, conf = classify(crop)
-
-                    if conf < 0.45:
-                        continue
+                    raw, conf, margin = classify(crop)
 
                     raw_key = raw.lower().replace(" ", "_").strip()
 
-                    english = raw_key.replace(
-                        "_",
-                        " "
-                    ).title()
+                    # =========================
+                    # UNKNOWN SPECIES LOGIC
+                    # Reject if top-1 confidence is low OR if the model is
+                    # torn between two classes (small margin) - both are
+                    # signs the bird isn't actually one it was trained on.
+                    # =========================
+                    CONF_THRESHOLD = 0.45
+                    MARGIN_THRESHOLD = 0.20
 
-                    sinhala_name = sinhala.get(
-                        raw_key,
-                        ""
-                    )
+                    if conf >= CONF_THRESHOLD and margin >= MARGIN_THRESHOLD:
+                        english = raw_key.replace("_", " ").title()
+                        sinhala_name = sinhala.get(raw_key, "")
+                    else:
+                        english = "Unknown Bird"
+                        sinhala_name = "හඳුනාගත නොහැක"
+                        conf = 0.0
 
-                    last_boxes.append(
-                        (x1, y1, x2, y2)
-                    )
-
-                    last_labels.append(
-                        (
-                            english,
-                            sinhala_name,
-                            conf
-                        )
-                    )
+                    last_boxes.append((x1, y1, x2, y2))
+                    last_labels.append((english, sinhala_name, conf))
 
             last_detect_time = current_time
 
@@ -280,11 +256,7 @@ def generate_frames(camera_index=0):
                 conf
             )
 
-        _, buffer = cv2.imencode(
-            ".jpg",
-            frame
-        )
-
+        _, buffer = cv2.imencode(".jpg", frame)
         frame_bytes = buffer.tobytes()
 
         yield (
@@ -303,11 +275,7 @@ def generate_frames(camera_index=0):
 
 @live_bp.route("/live-feed")
 def live_feed():
-    camera_index = request.args.get(
-        "camera",
-        default=0,
-        type=int
-    )
+    camera_index = request.args.get("camera", default=0, type=int)
 
     return Response(
         generate_frames(camera_index),
@@ -315,10 +283,7 @@ def live_feed():
     )
 
 
-@live_bp.route(
-    "/stop-live-feed",
-    methods=["POST"]
-)
+@live_bp.route("/stop-live-feed", methods=["POST"])
 def stop_live_feed():
     release_camera()
 

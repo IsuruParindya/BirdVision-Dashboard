@@ -81,7 +81,7 @@ def predict_video():
                 crop = frame[y1:y2, x1:x2]
 
                 if crop.size != 0:
-                    raw, conf = classify(crop)
+                    raw, conf, margin = classify(crop)
                     update_accuracy(conf)
 
                     if conf > 0.6:

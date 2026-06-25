@@ -94,11 +94,20 @@ def predict_image():
         # CLASSIFICATION
         # =========================
 
-        raw, conf = classify(crop)
+        raw, conf, margin = classify(crop)
 
         update_accuracy(conf)
 
-        if conf < 0.6:
+        # =========================
+        # UNKNOWN SPECIES LOGIC
+        # Reject if top-1 confidence is low OR if the model is
+        # torn between two classes (small margin) - both are
+        # signs the bird isn't actually one it was trained on.
+        # =========================
+        CONF_THRESHOLD = 0.45
+        MARGIN_THRESHOLD = 0.20
+
+        if conf < CONF_THRESHOLD or margin < MARGIN_THRESHOLD:
             return jsonify({
                 "error": "Unknown bird"
             })
