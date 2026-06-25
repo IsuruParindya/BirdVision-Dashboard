@@ -11,12 +11,6 @@ def classify(img):
 
     with torch.no_grad():
         probs = torch.softmax(clf(x), dim=1)
-        top2_probs, top2_idx = torch.topk(probs, 2, dim=1)
+        conf, pred = torch.max(probs, 1)
 
-    top1_conf = float(top2_probs[0][0])
-    top2_conf = float(top2_probs[0][1])
-    margin = top1_conf - top2_conf
-
-    pred_idx = int(top2_idx[0][0])
-
-    return classes[pred_idx], top1_conf, margin
+    return classes[int(pred)], float(conf)
