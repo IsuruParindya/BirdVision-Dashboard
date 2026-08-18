@@ -1,6 +1,5 @@
 import os
 import cv2
-import json
 import numpy as np
 import time
 
@@ -23,99 +22,150 @@ font_path = os.path.join(
 )
 
 # =========================
-# FONT
+# CONFIGURATION
 # =========================
+
+DETECT_INTERVAL = 0.2
+
+YOLO_CONF = 0.25
+YOLO_IMGSZ = 320
+
+MAX_DETECTIONS = 3
+
+CONF_THRESHOLD = 0.45
+MARGIN_THRESHOLD = 0.20
+
+JPEG_QUALITY = 80
+
+
+# =========================
+# FONT CACHE
+# =========================
+
+_font_cache = {}
+
 
 def load_font(size):
-    try:
-        return ImageFont.truetype(font_path, size)
-    except:
-        return ImageFont.load_default()
+    if size not in _font_cache:
+        try:
+            _font_cache[size] = ImageFont.truetype(
+                font_path,
+                size
+            )
+        except Exception:
+            _font_cache[size] = ImageFont.load_default()
 
-
-def draw_sinhala(draw, x, y, text, font):
-    for ch in text:
-        draw.text(
-            (x, y),
-            ch,
-            font=font,
-            fill=(0, 0, 0)
-        )
-        x += font.getbbox(ch)[2]
+    return _font_cache[size]
 
 
 # =========================
-# DRAW LABEL
+# DRAW LABELS + BOUNDING BOXES
 # =========================
 
-def draw_label(frame, x1, y1, x2, y2, english, sinhala_name, conf):
-    h, w, _ = frame.shape
+def draw_labels(frame, detections):
+
+    if not detections:
+        return frame
+
+    h, w = frame.shape[:2]
+
     scale = max(w, h) / 800
 
     font_size_en = max(16, int(20 * scale))
     font_size_si = max(14, int(18 * scale))
 
-    font_en_dynamic = load_font(font_size_en)
-    font_si_dynamic = load_font(font_size_si)
+    font_en = load_font(font_size_en)
+    font_si = load_font(font_size_si)
 
     box_w = int(300 * scale)
     box_h = int(55 * scale)
     padding = int(5 * scale)
-
     thickness = max(2, int(2 * scale))
 
-    overlay = frame.copy()
-
-    cv2.rectangle(
-        overlay,
-        (x1, y1),
-        (x2, y2),
-        (0, 180, 100),
-        -1
-    )
-
-    frame = cv2.addWeighted(
-        overlay,
-        0.12,
+    # Convert frame to PIL once
+    rgb = cv2.cvtColor(
         frame,
-        0.88,
-        0
+        cv2.COLOR_BGR2RGB
     )
 
-    cv2.rectangle(
-        frame,
-        (x1, y1),
-        (x2, y2),
-        (0, 180, 100),
-        thickness
-    )
-
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     pil = Image.fromarray(rgb)
     draw = ImageDraw.Draw(pil)
 
-    label_en = f"{english} ({int(conf * 100)}%)" if conf > 0 else english
-
-    draw.rectangle(
-        [x1, y1 - box_h, x1 + box_w, y1],
-        fill=(200, 220, 255)
-    )
-
-    draw.text(
-        (x1 + padding, y1 - box_h + padding),
-        label_en,
-        font=font_en_dynamic,
-        fill=(0, 0, 0)
-    )
-
-    draw_sinhala(
-        draw,
-        x1 + padding,
-        y1 - box_h + padding + font_size_en + 2,
+    for (
+        x1,
+        y1,
+        x2,
+        y2,
+        english,
         sinhala_name,
-        font_si_dynamic
-    )
+        conf
+    ) in detections:
 
+        # =========================
+        # VALIDATE COORDINATES
+        # =========================
+
+        x1 = max(0, min(x1, w - 1))
+        y1 = max(0, min(y1, h - 1))
+        x2 = max(0, min(x2, w - 1))
+        y2 = max(0, min(y2, h - 1))
+
+        if x2 <= x1 or y2 <= y1:
+            continue
+
+        # =========================
+        # BOUNDING BOX
+        # =========================
+
+        draw.rectangle(
+            [x1, y1, x2, y2],
+            outline=(0, 180, 100),
+            width=thickness
+        )
+
+        # =========================
+        # LABEL
+        # =========================
+
+        label_y = max(0, y1 - box_h)
+
+        label_en = (
+            f"{english} ({int(conf * 100)}%)"
+            if conf > 0
+            else english
+        )
+
+        draw.rectangle(
+            [
+                x1,
+                label_y,
+                x1 + box_w,
+                y1
+            ],
+            fill=(200, 220, 255)
+        )
+
+        draw.text(
+            (
+                x1 + padding,
+                label_y + padding
+            ),
+            label_en,
+            font=font_en,
+            fill=(0, 0, 0)
+        )
+
+        draw.text(
+            (
+                x1 + padding,
+                label_y + padding + font_size_en + 2
+            ),
+            sinhala_name,
+            font=font_si,
+            fill=(0, 0, 0)
+        )
+
+    # Convert back to OpenCV once
     frame = cv2.cvtColor(
         np.array(pil),
         cv2.COLOR_RGB2BGR
@@ -132,121 +182,188 @@ active_camera = None
 
 
 def release_camera():
+
     global active_camera
 
     if active_camera is not None:
-        active_camera.release()
+
+        try:
+            active_camera.release()
+        except Exception:
+            pass
+
         active_camera = None
+
         print("Camera released")
 
 
 def get_camera(camera_index=0):
+
     global active_camera
 
     release_camera()
 
-    candidates = [camera_index] + [i for i in range(5) if i != camera_index]
+    candidates = (
+        [camera_index]
+        + [
+            i for i in range(5)
+            if i != camera_index
+        ]
+    )
 
     for idx in candidates:
-        cap = cv2.VideoCapture(idx, cv2.CAP_DSHOW)
 
-        if cap.isOpened():
-            ret, _ = cap.read()
+        cap = cv2.VideoCapture(
+            idx,
+            cv2.CAP_DSHOW
+        )
 
-            if ret:
-                print(f"Using camera index: {idx}")
-                active_camera = cap
-                return cap
+        if not cap.isOpened():
+
+            cap.release()
+            continue
+
+        ret, _ = cap.read()
+
+        if ret:
+
+            print(
+                f"Using camera index: {idx}"
+            )
+
+            # Set camera capture resolution
+            cap.set(
+                cv2.CAP_PROP_FRAME_WIDTH,
+                640
+            )
+
+            cap.set(
+                cv2.CAP_PROP_FRAME_HEIGHT,
+                480
+            )
+
+            active_camera = cap
+
+            return cap
 
         cap.release()
 
-    raise Exception(f"No camera found near index {camera_index}")
+    raise Exception(
+        f"No camera found near index {camera_index}"
+    )
 
 
 # =========================
-# STREAM
+# DETECTION
 # =========================
 
-def generate_frames(camera_index=0):
-    try:
-        cap = get_camera(camera_index)
-    except Exception as e:
-        print(str(e))
-        return
+def detect_birds(frame):
 
-    DETECT_INTERVAL = 0.2
-    last_detect_time = 0
+    detections = []
 
-    last_boxes = []
-    last_labels = []
+    results = detector.predict(
+        frame,
+        conf=YOLO_CONF,
+        imgsz=YOLO_IMGSZ,
+        verbose=False
+    )[0]
 
-    while True:
-        success, frame = cap.read()
+    if results.boxes is None:
+        return detections
 
-        if not success:
-            break
+    # Process maximum 3 detected birds
+    for b in results.boxes[:MAX_DETECTIONS]:
 
-        frame = cv2.flip(frame, 1)
+        # =========================
+        # GET BOUNDING BOX
+        # =========================
 
-        h, w = frame.shape[:2]
-        scale = 640 / w
+        x1, y1, x2, y2 = map(
+            int,
+            b.xyxy[0]
+        )
 
-        frame = cv2.resize(frame, (640, int(h * scale)))
+        # =========================
+        # VALIDATE COORDINATES
+        # =========================
 
-        current_time = time.time()
+        x1 = max(0, x1)
+        y1 = max(0, y1)
 
-        if current_time - last_detect_time > DETECT_INTERVAL:
-            last_boxes = []
-            last_labels = []
+        x2 = min(
+            frame.shape[1],
+            x2
+        )
 
-            results = detector.predict(
-                frame,
-                conf=0.25,
-                imgsz=320,
-                verbose=False
-            )[0]
+        y2 = min(
+            frame.shape[0],
+            y2
+        )
 
-            if results.boxes is not None and len(results.boxes) > 0:
-                for b in results.boxes[:3]:
-                    x1, y1, x2, y2 = map(int, b.xyxy[0])
+        if x2 <= x1 or y2 <= y1:
+            continue
 
-                    crop = frame[y1:y2, x1:x2]
+        # =========================
+        # CROP BIRD REGION
+        # =========================
 
-                    if crop.size == 0:
-                        continue
+        crop = frame[
+            y1:y2,
+            x1:x2
+        ]
 
-                    raw, conf, margin = classify(crop)
+        if crop.size == 0:
+            continue
 
-                    raw_key = raw.lower().replace(" ", "_").strip()
+        # =========================
+        # RESNET50 CLASSIFICATION
+        # =========================
 
-                    # =========================
-                    # UNKNOWN SPECIES LOGIC
-                    # Reject if top-1 confidence is low OR if the model is
-                    # torn between two classes (small margin) - both are
-                    # signs the bird isn't actually one it was trained on.
-                    # =========================
-                    CONF_THRESHOLD = 0.45
-                    MARGIN_THRESHOLD = 0.20
+        raw, conf, margin = classify(crop)
 
-                    if conf >= CONF_THRESHOLD and margin >= MARGIN_THRESHOLD:
-                        english = raw_key.replace("_", " ").title()
-                        sinhala_name = sinhala.get(raw_key, "")
-                    else:
-                        english = "Unknown Bird"
-                        sinhala_name = "හඳුනාගත නොහැක"
-                        conf = 0.0
+        raw_key = (
+            raw
+            .lower()
+            .replace(" ", "_")
+            .strip()
+        )
 
-                    last_boxes.append((x1, y1, x2, y2))
-                    last_labels.append((english, sinhala_name, conf))
+        # =========================
+        # UNKNOWN BIRD LOGIC
+        # =========================
 
-            last_detect_time = current_time
+        if (
+            conf >= CONF_THRESHOLD
+            and margin >= MARGIN_THRESHOLD
+        ):
 
-        for i, box in enumerate(last_boxes):
-            x1, y1, x2, y2 = box
-            english, sinhala_name, conf = last_labels[i]
+            english = (
+                raw_key
+                .replace("_", " ")
+                .title()
+            )
 
-            frame = draw_label(
-                frame,
+            sinhala_name = sinhala.get(
+                raw_key,
+                ""
+            )
+
+        else:
+
+            english = "Unknown Bird"
+
+            sinhala_name = (
+                "හඳුනාගත නොහැක"
+            )
+
+            conf = 0.0
+
+        # =========================
+        # SAVE DETECTION
+        # =========================
+
+        detections.append(
+            (
                 x1,
                 y1,
                 x2,
@@ -255,18 +372,152 @@ def generate_frames(camera_index=0):
                 sinhala_name,
                 conf
             )
-
-        _, buffer = cv2.imencode(".jpg", frame)
-        frame_bytes = buffer.tobytes()
-
-        yield (
-            b"--frame\r\n"
-            b"Content-Type: image/jpeg\r\n\r\n"
-            + frame_bytes +
-            b"\r\n"
         )
 
-    release_camera()
+    return detections
+
+
+# =========================
+# STREAM
+# =========================
+
+def generate_frames(camera_index=0):
+
+    try:
+
+        cap = get_camera(
+            camera_index
+        )
+
+    except Exception as e:
+
+        print(
+            f"Camera error: {e}"
+        )
+
+        return
+
+    last_detect_time = 0
+    last_detections = []
+
+    try:
+
+        while True:
+
+            # =========================
+            # READ CAMERA FRAME
+            # =========================
+
+            success, frame = cap.read()
+
+            if not success:
+                break
+
+            # =========================
+            # MIRROR CAMERA
+            # =========================
+
+            frame = cv2.flip(
+                frame,
+                1
+            )
+
+            # =========================
+            # RESIZE FRAME
+            # =========================
+
+            h, w = frame.shape[:2]
+
+            if w != 640:
+
+                scale = 640 / float(w)
+
+                new_height = int(
+                    h * scale
+                )
+
+                frame = cv2.resize(
+                    frame,
+                    (
+                        640,
+                        new_height
+                    ),
+                    interpolation=cv2.INTER_AREA
+                )
+
+            # =========================
+            # CHECK DETECTION INTERVAL
+            # =========================
+
+            current_time = time.time()
+
+            if (
+                current_time - last_detect_time
+                >= DETECT_INTERVAL
+            ):
+
+                try:
+
+                    last_detections = (
+                        detect_birds(frame)
+                    )
+
+                except Exception as e:
+
+                    print(
+                        f"Detection error: {e}"
+                    )
+
+                last_detect_time = (
+                    current_time
+                )
+
+            # =========================
+            # DRAW LAST DETECTIONS
+            # =========================
+
+            frame = draw_labels(
+                frame,
+                last_detections
+            )
+
+            # =========================
+            # JPEG ENCODING
+            # =========================
+
+            success, buffer = cv2.imencode(
+                ".jpg",
+                frame,
+                [
+                    cv2.IMWRITE_JPEG_QUALITY,
+                    JPEG_QUALITY
+                ]
+            )
+
+            if not success:
+                continue
+
+            frame_bytes = buffer.tobytes()
+
+            # =========================
+            # MJPEG STREAM
+            # =========================
+
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n"
+                + frame_bytes
+                + b"\r\n"
+            )
+
+    finally:
+
+        try:
+            cap.release()
+        except Exception:
+            pass
+
+        release_camera()
 
 
 # =========================
@@ -275,18 +526,33 @@ def generate_frames(camera_index=0):
 
 @live_bp.route("/live-feed")
 def live_feed():
-    camera_index = request.args.get("camera", default=0, type=int)
+
+    camera_index = request.args.get(
+        "camera",
+        default=0,
+        type=int
+    )
 
     return Response(
-        generate_frames(camera_index),
-        mimetype="multipart/x-mixed-replace; boundary=frame"
+        generate_frames(
+            camera_index
+        ),
+        mimetype=(
+            "multipart/x-mixed-replace; "
+            "boundary=frame"
+        )
     )
 
 
-@live_bp.route("/stop-live-feed", methods=["POST"])
+@live_bp.route(
+    "/stop-live-feed",
+    methods=["POST"]
+)
 def stop_live_feed():
+
     release_camera()
 
     return jsonify({
-        "message": "Camera stopped successfully"
+        "message":
+            "Camera stopped successfully"
     })
